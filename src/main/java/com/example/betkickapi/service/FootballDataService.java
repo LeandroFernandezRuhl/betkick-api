@@ -1,9 +1,10 @@
 package com.example.betkickapi.service;
 
 import com.example.betkickapi.model.Competition;
+import com.example.betkickapi.model.Match;
 import com.example.betkickapi.response.CompetitionsResponse;
+import com.example.betkickapi.response.MatchesResponse;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,7 +17,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @Service
-public class CompetitionService {
+public class FootballDataService {
     private RestTemplate restTemplate;
     private Environment env;
     private final String API_URL = "https://api.football-data.org/v4/competitions";
@@ -35,5 +36,22 @@ public class CompetitionService {
         );
 
         return response.getBody().getCompetitions();
+    }
+
+    public List<Match> getTodayMatchesFromApi() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", env.getProperty("API_KEY"));
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<MatchesResponse> response = restTemplate.exchange(
+                "https://api.football-data.org/v4/matches",
+                HttpMethod.GET,
+                entity,
+                MatchesResponse.class
+        );
+
+        return response.getBody().getMatches();
     }
 }
