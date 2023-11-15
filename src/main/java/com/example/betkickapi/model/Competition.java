@@ -1,14 +1,22 @@
 package com.example.betkickapi.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Entity
+@Data
 @AllArgsConstructor
-@ToString
-public class Competition {
+@NoArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+public class Competition extends AbstractPersistableEntity<Integer> {
+    @Id
+    @EqualsAndHashCode.Include
+    private Integer id;
     private String name;
-    private String emblem; // url
+    private String code;
+    private String emblem; // image url
 }

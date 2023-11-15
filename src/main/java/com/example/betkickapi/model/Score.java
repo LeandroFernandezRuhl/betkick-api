@@ -1,16 +1,15 @@
 package com.example.betkickapi.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Map;
-
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
-@ToString
+@NoArgsConstructor
 public class Score {
     private Integer home;
     private Integer away;
+    private Integer penaltiesHome;
+    private Integer penaltiesAway;
 }

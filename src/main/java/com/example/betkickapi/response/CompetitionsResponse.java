@@ -1,7 +1,7 @@
 package com.example.betkickapi.response;
 
 import com.example.betkickapi.model.Competition;
-import lombok.*;
+import lombok.Data;
 
 import java.util.List;
 
