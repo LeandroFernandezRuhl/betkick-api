@@ -11,4 +11,6 @@ public interface MatchService {
 
     // make get todays matches method this gets all matches in db
     List<Match> getMatches();
+
+    List<Match> getByCompetitionId(Integer id);
 }

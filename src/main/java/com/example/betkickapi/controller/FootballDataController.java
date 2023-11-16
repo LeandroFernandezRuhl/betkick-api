@@ -6,10 +6,7 @@ import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -31,5 +28,11 @@ public class FootballDataController {
     public ResponseEntity<List<Match>> getTodayMatches() {
         return ResponseEntity.ok()
                 .body(matchService.getMatches()); // remember to change to today's matches
+    }
+
+    @GetMapping(value = "/matches", params = "competitionId")
+    public ResponseEntity<List<Match>> getMatchesByCompetitionId(@RequestParam Integer competitionId) {
+        return ResponseEntity.ok()
+                .body(matchService.getByCompetitionId(competitionId));
     }
 }

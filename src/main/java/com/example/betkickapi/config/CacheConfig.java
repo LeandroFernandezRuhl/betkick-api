@@ -21,7 +21,7 @@ public class CacheConfig {
 
     Caffeine<Object, Object> caffeineCacheBuilder() {
         return Caffeine.newBuilder()
-                .initialCapacity(2)
+                .initialCapacity(2) // re-configure this
                 .maximumSize(2)
                 .expireAfterWrite(Duration.ofHours(24)); // change this to be coherent with the cron scheduler
     }
