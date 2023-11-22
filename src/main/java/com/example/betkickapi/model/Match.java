@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 
@@ -29,7 +31,7 @@ public class Match extends AbstractPersistableEntity<Integer> {
     @JoinColumn(name = "competitionId", referencedColumnName = "id")
     private Competition competition;
     @Column(name = "date") // utcDate is a reserved keyword in mysql
-    private Date utcDate;
+    private LocalDateTime utcDate;
     @Enumerated(EnumType.STRING)
     private Status status;
     @Enumerated(EnumType.STRING)

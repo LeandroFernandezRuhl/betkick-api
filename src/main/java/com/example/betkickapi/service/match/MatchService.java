@@ -1,16 +1,20 @@
 package com.example.betkickapi.service.match;
 
 import com.example.betkickapi.model.Match;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 
 public interface MatchService {
-    void saveMatch(Match match);
+    Boolean areThereMatchesToday();
 
     void saveMatches(List<Match> matches);
 
-    // make get todays matches method this gets all matches in db
+    void saveOrUpdateMatches(List<Match> matches);
+
+    void updateMatches(List<Match> matches);
+
     List<Match> getMatches();
 
-    List<Match> getByCompetitionId(Integer id);
+    List<Match> getMatchesByCompetitionId(Integer id);
 }

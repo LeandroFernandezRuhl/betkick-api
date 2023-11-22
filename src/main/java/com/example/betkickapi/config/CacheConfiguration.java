@@ -11,7 +11,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableCaching
-public class CacheConfig {
+public class CacheConfiguration {
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("footballDataCache");
@@ -20,9 +20,9 @@ public class CacheConfig {
     }
 
     Caffeine<Object, Object> caffeineCacheBuilder() {
+        // each matches by competition cache (12) + competitions cache (1) + matches cache (1) = 14
         return Caffeine.newBuilder()
-                .initialCapacity(2) // re-configure this
-                .maximumSize(2)
-                .expireAfterWrite(Duration.ofHours(24)); // change this to be coherent with the cron scheduler
+                .initialCapacity(14)
+                .maximumSize(14);
     }
 }
