@@ -42,6 +42,8 @@ public class UserController {
                 applicationUser.setId(auth0UserId);
                 applicationUser.setName(user.getAttribute("name"));
                 applicationUser.setEmail(user.getAttribute("email"));
+                // users start with $1000 balance
+                applicationUser.setAccountBalance(1000d);
 
                 // Save this user in the application's database
                 userService.saveUser(applicationUser);

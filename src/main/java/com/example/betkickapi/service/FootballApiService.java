@@ -4,6 +4,8 @@ import com.example.betkickapi.model.Competition;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.Score;
 import com.example.betkickapi.model.Team;
+import com.example.betkickapi.model.enums.Status;
+import com.example.betkickapi.model.enums.Winner;
 import com.example.betkickapi.response.CompetitionsResponse;
 import com.example.betkickapi.response.MatchesResponse;
 import com.example.betkickapi.service.competition.CompetitionService;
@@ -123,6 +125,31 @@ public class FootballApiService {
             matchService.saveOrUpdateMatches(matches);
         else
             matchService.saveMatches(matches);
+    }
+
+    @Transactional
+    public void fetchAndUpdateMatchesTest() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", API_KEY);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<MatchesResponse> response = restTemplate.exchange(
+                "https://api.football-data.org/v4/matches",
+                HttpMethod.GET,
+                entity,
+                MatchesResponse.class
+        );
+
+        List<Match> matches = response.getBody().getMatches();
+
+        if (matches.size() > 0) {
+            System.out.println("MATCH TO TEST: ");
+            System.out.println(matches.get(1));
+            matches.get(1).setStatus(Status.FINISHED);
+            matches.get(1).setWinner(Winner.DRAW);
+            matches.forEach(match -> match.setNew(false)); // entities are guaranteed to already be in the DB
+            matchService.updateMatches(matches);
+        }
     }
 
     @Transactional

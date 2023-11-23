@@ -38,6 +38,15 @@ public class MatchUpdateScheduler {
         }
     }
 
+   // @Scheduled(cron = "0 */2 * * * *")
+    /*@Transactional
+    public void updateMatchesTest() {
+        log.info("Scheduled task to update matches is being executed");
+        if (matchesToday) {
+            footballApiService.fetchAndUpdateMatchesTest();
+        }
+    } */
+
     @Scheduled(cron = "0 0 0 * * ?")
     public void checkMatchesToday() {
         this.matchesToday = matchService.areThereMatchesToday();

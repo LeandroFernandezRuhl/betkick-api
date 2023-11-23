@@ -1,12 +1,15 @@
 package com.example.betkickapi.service.match;
 
-import com.example.betkickapi.model.Competition;
+import com.example.betkickapi.model.Bet;
 import com.example.betkickapi.model.Match;
+import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.repository.MatchRepository;
 import com.example.betkickapi.service.CacheService;
+import com.example.betkickapi.service.bet.BetService;
+import com.example.betkickapi.service.bet.BetServiceImpl;
+import com.example.betkickapi.service.user.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 public class MatchServiceImpl implements MatchService {
     private MatchRepository matchRepository;
     private CacheService cacheService;
+    private BetService betService;
 
     @Override
     @Cacheable(value = "footballDataCache", key = "'matches'")
@@ -43,6 +47,11 @@ public class MatchServiceImpl implements MatchService {
         String cacheKey = "matchesByCompetitionId-" + id;
         log.info("New cache key created: " + cacheKey);
         return matchRepository.findByCompetitionId(id);
+    }
+
+    @Override
+    public List<Match> getNonFinishedMatchesByIds(List<Integer> ids) {
+        return matchRepository.findByIdsAndStatusIsNotFinished(ids);
     }
 
     @Override
@@ -90,8 +99,12 @@ public class MatchServiceImpl implements MatchService {
             Match matchInDb = matchesInDb.get(newMatch.getId());
             matchInDb.setScore(newMatch.getScore());
             matchInDb.setDuration(newMatch.getDuration());
-            matchInDb.setStatus(newMatch.getStatus());
             matchInDb.setUtcDate(newMatch.getUtcDate());
+            // a match has finished so bet earnings have to be paid
+            if (matchInDb.getStatus() != Status.FINISHED && newMatch.getStatus() == Status.FINISHED) {
+                betService.finishBets(newMatch);
+            }
+            matchInDb.setStatus(newMatch.getStatus());
         });
 
         List<Match> savedMatches = matchRepository.saveAll(newMatches);

@@ -22,6 +22,7 @@ public class User extends AbstractPersistableEntity<String> {
     private String id; // auth0 user id
     private String name;
     private String email;
+    private Double accountBalance;
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER) // o join fetch
     private List<Bet> bets;
 
