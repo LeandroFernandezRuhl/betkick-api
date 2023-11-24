@@ -3,6 +3,11 @@ package com.example.betkickapi.controller;
 import com.example.betkickapi.model.User;
 import com.example.betkickapi.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,15 +15,16 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.MessageFormat;
 
 import static java.util.Map.of;
 
 @RestController
+@Validated
+@Slf4j
 public class UserController {
     private final ClientRegistration registration;
     private final UserService userService;
@@ -26,6 +32,29 @@ public class UserController {
     public UserController(ClientRegistrationRepository registrations, UserService userService) {
         this.registration = registrations.findByRegistrationId("okta");
         this.userService = userService;
+    }
+
+    @GetMapping("/api/user/balance")
+    public ResponseEntity<Double> getUserBalance(String userId) {
+        return ResponseEntity.ok(userService.findById(userId).getAccountBalance());
+    }
+
+    @PostMapping("/api/user/withdraw")
+    @Transactional
+    public ResponseEntity<Double> withdraw(@RequestBody @NotNull @Positive Double amount, @RequestParam @NotNull String userId) {
+        log.info("Request to withdraw received!");
+        User user = userService.findById(userId);
+        User updatedUser = userService.decrementUserBalance(user, amount);
+        return ResponseEntity.ok(updatedUser.getAccountBalance());
+    }
+
+    @PostMapping("/api/user/deposit")
+    @Transactional
+    public ResponseEntity<Double> deposit(@RequestBody @NotNull @Positive Double amount, @RequestParam String userId) {
+        log.info("Request to retrieve deposit received!");
+        User user = userService.findById(userId);
+        User updatedUser = userService.incrementUserBalance(user, amount);
+        return ResponseEntity.ok(updatedUser.getAccountBalance());
     }
 
     @GetMapping("/api/user")

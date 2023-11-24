@@ -28,7 +28,7 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +
             "LEFT JOIN FETCH m.awayTeam " +
-            "WHERE m.id IN :ids AND m.status <> 'FINISHED'")
+            "WHERE m.id IN :ids AND m.status <> 'FINISHED' AND m.status <> 'AWARDED'")
     List<Match> findByIdsAndStatusIsNotFinished(List<Integer> ids);
 
     @Query("SELECT m FROM Match m " +

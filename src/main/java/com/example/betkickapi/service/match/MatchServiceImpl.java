@@ -101,7 +101,8 @@ public class MatchServiceImpl implements MatchService {
             matchInDb.setDuration(newMatch.getDuration());
             matchInDb.setUtcDate(newMatch.getUtcDate());
             // a match has finished so bet earnings have to be paid
-            if (matchInDb.getStatus() != Status.FINISHED && newMatch.getStatus() == Status.FINISHED) {
+            if ((matchInDb.getStatus() != Status.FINISHED && matchInDb.getStatus() != Status.AWARDED)
+                    && (newMatch.getStatus() == Status.FINISHED || newMatch.getStatus() == Status.AWARDED)) {
                 betService.finishBets(newMatch);
             }
             matchInDb.setStatus(newMatch.getStatus());

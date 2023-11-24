@@ -26,14 +26,19 @@ public class UserServiceImpl implements UserService {
             user.setAccountBalance(user.getAccountBalance() - amount);
             return userRepository.save(user);
         } else {
-            throw new AccountBalanceException("Insufficient funds to make the bets");
+            throw new AccountBalanceException("Insufficient funds");
         }
     }
 
     @Override
-    public void incrementUserBalance(User user, Double amount) {
-        user.setAccountBalance(user.getAccountBalance() + amount);
-        userRepository.save(user);
+    public User incrementUserBalance(User user, Double amount) {
+        double currentBalance = user.getAccountBalance();
+        if (Double.isFinite(amount) && currentBalance <= Double.MAX_VALUE - amount) {
+            user.setAccountBalance(currentBalance + amount);
+            return userRepository.save(user);
+        } else {
+            throw new IllegalArgumentException("Adding the amount would exceed the max possible value");
+        }
     }
 
     @Override

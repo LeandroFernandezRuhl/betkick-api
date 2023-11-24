@@ -8,7 +8,7 @@ public interface UserService {
 
     User decrementUserBalance(User user, Double amount);
 
-    void incrementUserBalance(User user, Double amount);
+    User incrementUserBalance(User user, Double amount);
 
     User findById(String id);
 
