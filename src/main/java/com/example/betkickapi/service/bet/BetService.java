@@ -11,6 +11,8 @@ public interface BetService {
 
     void finishBets(Match finishedMatch);
 
+    Double cancelBet(Integer betId);
+
     List<BetHistoryResponse> findBetsByUserId(String userId);
 
     Double saveBets(List<BetRequest> betRequests, User user, List<Match> matches);

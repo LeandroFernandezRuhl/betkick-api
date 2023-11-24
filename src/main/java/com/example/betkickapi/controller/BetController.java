@@ -8,6 +8,7 @@ import com.example.betkickapi.response.BetHistoryResponse;
 import com.example.betkickapi.service.bet.BetService;
 import com.example.betkickapi.service.match.MatchService;
 import com.example.betkickapi.service.user.UserService;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -43,6 +44,13 @@ public class BetController {
         log.info("Request to retrieve bet history received!");
         List<BetHistoryResponse> response = betService.findBetsByUserId(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/api/user/bet")
+    @Transactional
+    public ResponseEntity<Double> cancelBet(Integer betId) {
+        log.info("Request to cancel a bet received!");
+        return ResponseEntity.ok(betService.cancelBet(betId));
     }
 
 }

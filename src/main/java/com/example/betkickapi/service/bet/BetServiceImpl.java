@@ -1,8 +1,10 @@
 package com.example.betkickapi.service.bet;
 
+import com.example.betkickapi.exception.EntityNotFoundException;
 import com.example.betkickapi.model.Bet;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.User;
+import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.repository.BetRepository;
 import com.example.betkickapi.request.BetRequest;
 import com.example.betkickapi.response.BetHistoryResponse;
@@ -40,6 +42,20 @@ public class BetServiceImpl implements BetService {
     }
 
     @Override
+    public Double cancelBet(Integer betId) {
+        Bet bet = betRepository.findById(betId)
+                .orElseThrow(() -> new EntityNotFoundException(Bet.class, "betId", betId.toString()));
+        Status matchStatus = bet.getMatch().getStatus();
+        if (matchStatus == Status.IN_PLAY || matchStatus == Status.PAUSED ||
+                matchStatus == Status.FINISHED || matchStatus == Status.AWARDED) {
+            throw new IllegalStateException("Can't cancel a bet if the match has started or finish");
+        }
+        User user = userService.incrementUserBalance(bet.getUser(), bet.getAmount());
+        betRepository.delete(bet);
+        return user.getAccountBalance();
+    }
+
+    @Override
     public List<BetHistoryResponse> findBetsByUserId(String userId) {
         List<Bet> bets = betRepository.findByUserId(userId);
         return bets.stream()
@@ -61,7 +77,7 @@ public class BetServiceImpl implements BetService {
         // filter out bet requests that don't have a valid match id
         // then convert those with a valid match id to bet entities
         List<Bet> bets = betRequests.stream()
-                .filter( request -> matchesById.get(request.getMatchId()) != null)
+                .filter(request -> matchesById.get(request.getMatchId()) != null)
                 .map(request -> convertBetRequestToBet(request, user, matchesById.get(request.getMatchId())))
                 .toList();
 
