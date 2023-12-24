@@ -19,6 +19,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -26,7 +27,6 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URISyntaxException;
-import java.nio.channels.AcceptPendingException;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -36,7 +36,7 @@ import static org.springframework.http.HttpStatus.*;
  * The {@code RestExceptionHandler} class provides centralized exception handling for common exceptions that may occur
  * during the processing of RESTful API requests. It extends the {@link ResponseEntityExceptionHandler} class and is
  * annotated with {@link ControllerAdvice} to allow global exception handling across multiple controllers. It uses the
- * {@link Order} annotation to set the precedence of this exception handler to be the highest.
+ * {@link Order} annotation to set the status of this exception handler to be the highest.
  *
  * <p>This class handles various exceptions by overriding the respective methods provided by {@link ResponseEntityExceptionHandler}.
  * It builds a response entity with an {@link ApiError} object that encapsulates the error details and status code. The

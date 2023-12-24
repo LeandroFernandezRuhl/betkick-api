@@ -8,7 +8,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Data
@@ -21,6 +20,7 @@ public class Bet {
     @EqualsAndHashCode.Include
     private Long id;
     private LocalDateTime placedAt; // utc date
+    // this needs to be validated against the ones in the database
     private Double odds;
     private Double amount;
     private Boolean isWon;

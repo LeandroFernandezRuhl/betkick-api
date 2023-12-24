@@ -1,6 +1,5 @@
 package com.example.betkickapi.controller;
 
-import com.example.betkickapi.model.Bet;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.User;
 import com.example.betkickapi.request.BetRequest;

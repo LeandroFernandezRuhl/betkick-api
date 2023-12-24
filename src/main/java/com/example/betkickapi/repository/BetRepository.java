@@ -1,7 +1,6 @@
 package com.example.betkickapi.repository;
 
 import com.example.betkickapi.model.Bet;
-import com.example.betkickapi.model.Match;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

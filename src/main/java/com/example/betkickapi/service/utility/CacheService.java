@@ -1,4 +1,4 @@
-package com.example.betkickapi.service;
+package com.example.betkickapi.service.utility;
 
 import lombok.AllArgsConstructor;
 import org.springframework.cache.Cache;

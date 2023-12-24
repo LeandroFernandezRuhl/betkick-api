@@ -1,6 +1,7 @@
 package com.example.betkickapi.repository;
 
 import com.example.betkickapi.model.Match;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -24,6 +24,15 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             "LEFT JOIN FETCH m.awayTeam " +
             "WHERE m.competition.id = :competitionId")
     List<Match> findByCompetitionId(@Param("competitionId") Integer competitionId);
+
+    // can't use LIMIT so pageable is necessary
+    // also using native queries gives NonUniqueDiscoveredSqlAliasException when doing the joins
+    // and when using JPQL the fields of the odds embedded object are not accessible
+    // so, given that only 3 entities are returned (page size), the best option is to use a query method instead of SQL
+    // because trying to workaround all those issues above just to make a few less selects is overkill,
+    // since the number of queries is already minimal
+    List<Match> findByOdds_TemporaryRandomOddsIsTrue(Pageable pageable);
+
     @Query("SELECT m FROM Match m " +
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +

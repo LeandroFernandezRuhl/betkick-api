@@ -3,18 +3,16 @@ package com.example.betkickapi.model;
 import com.example.betkickapi.model.enums.Duration;
 import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.model.enums.Winner;
+import com.example.betkickapi.model.embbeded.MatchOdds;
+import com.example.betkickapi.model.embbeded.Score;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Map;
 
 @Entity
@@ -40,6 +38,8 @@ public class Match extends AbstractPersistableEntity<Integer> {
     private Duration duration;
     @Embedded
     private Score score;
+    @Embedded
+    private MatchOdds odds;
     @ManyToOne
     @JoinColumn(name = "homeTeamId")
     private Team homeTeam;

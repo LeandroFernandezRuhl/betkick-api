@@ -1,12 +1,14 @@
-package com.example.betkickapi.service;
+package com.example.betkickapi.service.utility;
 
 import com.example.betkickapi.model.Competition;
 import com.example.betkickapi.model.Match;
-import com.example.betkickapi.model.Score;
 import com.example.betkickapi.model.Team;
 import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.model.enums.Winner;
+import com.example.betkickapi.model.embbeded.Score;
+import com.example.betkickapi.response.TeamStatsResponse;
 import com.example.betkickapi.response.CompetitionsResponse;
+import com.example.betkickapi.response.HeadToHeadResponse;
 import com.example.betkickapi.response.MatchesResponse;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
@@ -45,7 +47,43 @@ public class FootballApiService {
         this.teamService = teamService;
     }
 
-    public void fetchAndSaveCompetitions() {
+    // fetches the number of wins, draws and loses of a team
+    public TeamStatsResponse fetchTeamStats(Integer teamId, LocalDate dateFrom, LocalDate dateTo) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", API_KEY);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        // stats extracted from "resultSet" object in the JSON response
+        ResponseEntity<TeamStatsResponse> response = restTemplate.exchange(
+                "https://api.football-data.org/v4/teams/{teamId}/matches?dateFrom={dateFrom}&dateTo={dateTo}&limit=200",
+                HttpMethod.GET,
+                entity,
+                TeamStatsResponse.class,
+                teamId,
+                dateFrom,
+                dateTo
+        );
+
+        return response.getBody();
+    }
+
+    public HeadToHeadResponse fetchHeadToHead(Integer matchId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", API_KEY);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HeadToHeadResponse> response = restTemplate.exchange(
+                "https://api.football-data.org/v4/matches/{matchId}/head2head?limit=100",
+                HttpMethod.GET,
+                entity,
+                HeadToHeadResponse.class,
+                matchId
+        );
+
+        return response.getBody();
+    }
+
+    public List<Competition> fetchCompetitions() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Auth-Token", API_KEY);
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -57,8 +95,7 @@ public class FootballApiService {
                 CompetitionsResponse.class
         );
 
-        List<Competition> competitions = response.getBody().getCompetitions();
-        competitionService.saveCompetitions(competitions);
+        return response.getBody().getCompetitions();
     }
 
     @Transactional
@@ -86,6 +123,7 @@ public class FootballApiService {
         headers.set("X-Auth-Token", API_KEY);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
+        // this only gets today's games
         ResponseEntity<MatchesResponse> response = restTemplate.exchange(
                 "https://api.football-data.org/v4/matches",
                 HttpMethod.GET,

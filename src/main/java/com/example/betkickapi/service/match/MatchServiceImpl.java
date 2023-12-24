@@ -1,19 +1,21 @@
 package com.example.betkickapi.service.match;
 
-import com.example.betkickapi.model.Bet;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.enums.Status;
+import com.example.betkickapi.model.embbeded.MatchOdds;
 import com.example.betkickapi.repository.MatchRepository;
-import com.example.betkickapi.service.CacheService;
+import com.example.betkickapi.service.utility.CacheService;
 import com.example.betkickapi.service.bet.BetService;
-import com.example.betkickapi.service.bet.BetServiceImpl;
-import com.example.betkickapi.service.user.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,6 +65,11 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
+    public List<Match> findMatchesWithRandomOdds() {
+        return matchRepository.findByOdds_TemporaryRandomOddsIsTrue(PageRequest.of(0, 3));
+    }
+
+    @Override
     public void saveMatches(List<Match> matches) {
         // matches = matches.stream().filter(match -> !matchRepository.existsById(match.getId()))
         //         .collect(Collectors.toList());
@@ -75,7 +82,7 @@ public class MatchServiceImpl implements MatchService {
         List<Match> newMatches = matches.stream()
                 .filter(match -> !existingMatchIds.contains(match.getId()))
                 .toList();
-
+        newMatches.forEach(match -> match.setOdds(new MatchOdds().generateRandomOdds()));
         List<Match> savedMatches = matchRepository.saveAll(newMatches);
         invalidateMatchesCache(savedMatches);
     }
@@ -112,6 +119,14 @@ public class MatchServiceImpl implements MatchService {
         invalidateMatchesCache(savedMatches);
     }
 
+    @Override
+    public void updateMatch(Match updatedMatch) {
+        Match matchInDb = matchRepository.findById(updatedMatch.getId()).get();
+        matchInDb.setOdds(updatedMatch.getOdds());
+        matchRepository.save(matchInDb);
+        // cache is invalidated once per minute when doing batch updates, no need to do it here too
+    }
+
     private void invalidateMatchesCache(List<Match> savedMatches) {
         List<String> cacheKeys = savedMatches
                 .stream()
@@ -135,7 +150,7 @@ public class MatchServiceImpl implements MatchService {
         List<Match> newMatches = matches.stream()
                 .filter(match -> !existingMatchIds.contains(match.getId()))
                 .toList();
-
+        newMatches.forEach(match -> match.setOdds(new MatchOdds().generateRandomOdds()));
         List<Match> savedMatches = matchRepository.saveAll(newMatches);
         invalidateMatchesCache(savedMatches);
 

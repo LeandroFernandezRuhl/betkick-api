@@ -3,7 +3,6 @@ package com.example.betkickapi.request;
 import com.example.betkickapi.model.enums.Winner;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data

@@ -9,7 +9,12 @@ public interface MatchService {
 
     Boolean areThereMatchesToday();
 
+
+    List<Match> findMatchesWithRandomOdds();
+
     void saveMatches(List<Match> matches);
+
+    void updateMatch(Match updatedMatch);
 
     void saveOrUpdateMatches(List<Match> matches);
 
