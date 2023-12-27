@@ -1,8 +1,8 @@
 package com.example.betkickapi.service.utility;
 
 import com.example.betkickapi.model.embbeded.MatchOdds;
-import com.example.betkickapi.response.TeamStatsResponse;
-import com.example.betkickapi.response.HeadToHeadResponse;
+import com.example.betkickapi.web.externalApi.HeadToHeadResponse;
+import com.example.betkickapi.web.externalApi.TeamStatsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

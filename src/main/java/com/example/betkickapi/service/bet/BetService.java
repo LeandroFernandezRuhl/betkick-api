@@ -2,8 +2,8 @@ package com.example.betkickapi.service.bet;
 
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.User;
-import com.example.betkickapi.request.BetRequest;
-import com.example.betkickapi.response.BetHistoryResponse;
+import com.example.betkickapi.web.internal.BetHistoryResponse;
+import com.example.betkickapi.web.internal.BetRequest;
 
 import java.util.List;
 

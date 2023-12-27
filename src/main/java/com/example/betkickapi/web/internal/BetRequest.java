@@ -1,4 +1,4 @@
-package com.example.betkickapi.request;
+package com.example.betkickapi.web.internal;
 
 import com.example.betkickapi.model.enums.Winner;
 import jakarta.validation.constraints.NotNull;

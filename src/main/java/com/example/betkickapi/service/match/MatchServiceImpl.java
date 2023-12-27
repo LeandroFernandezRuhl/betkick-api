@@ -1,11 +1,11 @@
 package com.example.betkickapi.service.match;
 
 import com.example.betkickapi.model.Match;
-import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.model.embbeded.MatchOdds;
+import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.repository.MatchRepository;
-import com.example.betkickapi.service.utility.CacheService;
 import com.example.betkickapi.service.bet.BetService;
+import com.example.betkickapi.service.utility.CacheService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -88,12 +88,12 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public void updateMatches(List<Match> newMatches) {
-        List<Integer> matchIds = newMatches.stream()
+    public void updateMatches(List<Match> unsavedUpdatedMatches) {
+        List<Integer> matchIds = unsavedUpdatedMatches.stream()
                 .map(Match::getId)
                 .toList();
 
-        Map<Integer, Match> matchesInDb = matchRepository
+        Map<Integer, Match> nonUpdatedMatchesInDb = matchRepository
                 .findMatchesByIds(matchIds)
                 .stream()
                 .collect(Collectors.toMap(Match::getId, match -> match));
@@ -102,20 +102,24 @@ public class MatchServiceImpl implements MatchService {
         // doing just a normal saveAll and letting Hibernate fetch each
         // required entity individually
 
-        newMatches.forEach(newMatch -> {
-            Match matchInDb = matchesInDb.get(newMatch.getId());
-            matchInDb.setScore(newMatch.getScore());
-            matchInDb.setDuration(newMatch.getDuration());
-            matchInDb.setUtcDate(newMatch.getUtcDate());
-            // a match has finished so bet earnings have to be paid
-            if ((matchInDb.getStatus() != Status.FINISHED && matchInDb.getStatus() != Status.AWARDED)
-                    && (newMatch.getStatus() == Status.FINISHED || newMatch.getStatus() == Status.AWARDED)) {
-                betService.finishBets(newMatch);
-            }
-            matchInDb.setStatus(newMatch.getStatus());
-        });
+        List<Match> updatedMatchesToSave = unsavedUpdatedMatches
+                .stream()
+                .map(updatedMatch -> {
+                    Match matchInDb = nonUpdatedMatchesInDb.get(updatedMatch.getId());
+                    matchInDb.setScore(updatedMatch.getScore());
+                    matchInDb.setDuration(updatedMatch.getDuration());
+                    matchInDb.setUtcDate(updatedMatch.getUtcDate());
+                    // a match has finished so bet earnings have to be paid
+                    if ((matchInDb.getStatus() != Status.FINISHED && matchInDb.getStatus() != Status.AWARDED)
+                            && (updatedMatch.getStatus() == Status.FINISHED || updatedMatch.getStatus() == Status.AWARDED)) {
+                        betService.finishBets(updatedMatch);
+                    }
+                    matchInDb.setStatus(updatedMatch.getStatus());
+                    return matchInDb;
+                })
+                .toList();
 
-        List<Match> savedMatches = matchRepository.saveAll(newMatches);
+        List<Match> savedMatches = matchRepository.saveAll(updatedMatchesToSave);
         invalidateMatchesCache(savedMatches);
     }
 
@@ -130,9 +134,7 @@ public class MatchServiceImpl implements MatchService {
     private void invalidateMatchesCache(List<Match> savedMatches) {
         List<String> cacheKeys = savedMatches
                 .stream()
-                .map(match -> {
-                    return "matchesByCompetitionId-" + match.getCompetition().getId();
-                })
+                .map(match -> "matchesByCompetitionId-" + match.getCompetition().getId())
                 .distinct()
                 .toList();
         cacheService.invalidateCacheForKeys(cacheKeys);
@@ -155,11 +157,11 @@ public class MatchServiceImpl implements MatchService {
         invalidateMatchesCache(savedMatches);
 
         // update existent matches
-        List<Match> matchesInDb = matches.stream()
+        List<Match> matchesToUpdate = matches.stream()
                 .filter(match -> existingMatchIds.contains(match.getId()))
                 .toList();
-        matchesInDb.forEach(match -> match.setNew(false)); // entities are guaranteed to exist in the DB, so they're not new
+        matchesToUpdate.forEach(match -> match.setNew(false)); // entities are guaranteed to exist in the DB, so they're not new
 
-        this.updateMatches(matchesInDb);
+        this.updateMatches(matchesToUpdate);
     }
 }

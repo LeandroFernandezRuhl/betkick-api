@@ -1,12 +1,16 @@
 package com.example.betkickapi;
 
+import com.example.betkickapi.model.Competition;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.embbeded.MatchOdds;
-import com.example.betkickapi.response.TeamStatsResponse;
-import com.example.betkickapi.response.HeadToHeadResponse;
+import com.example.betkickapi.service.competition.CompetitionService;
+import com.example.betkickapi.service.match.MatchService;
+import com.example.betkickapi.service.standings.StandingsService;
 import com.example.betkickapi.service.utility.FootballApiService;
 import com.example.betkickapi.service.utility.OddsCalculationService;
-import com.example.betkickapi.service.match.MatchService;
+import com.example.betkickapi.web.externalApi.HeadToHeadResponse;
+import com.example.betkickapi.web.externalApi.StandingsResponse;
+import com.example.betkickapi.web.externalApi.TeamStatsResponse;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,28 +19,35 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
 @Slf4j
-public class MatchUpdateScheduler {
+public class JobScheduler {
     private FootballApiService footballApiService;
     private MatchService matchService;
     private OddsCalculationService oddsService;
+    private CompetitionService competitionService;
+    private StandingsService standingsService;
     private Boolean matchesToday;
     private Boolean shouldCalculateMatchOdds;
     private Boolean midnightTaskExecuting;
     private Boolean isFirstRequest;
+    private List<StandingsResponse> standingsList;
 
-    public MatchUpdateScheduler(FootballApiService footballApiService,
-                                MatchService matchService, OddsCalculationService oddsService) {
+    public JobScheduler(FootballApiService footballApiService, CompetitionService competitionService,
+                        MatchService matchService, OddsCalculationService oddsService, StandingsService standingsService) {
         this.footballApiService = footballApiService;
+        this.competitionService = competitionService;
         this.matchService = matchService;
         this.oddsService = oddsService;
+        this.standingsService = standingsService;
         this.matchesToday = false;
         this.shouldCalculateMatchOdds = false;
         this.midnightTaskExecuting = false;
         this.isFirstRequest = true;
+        this.standingsList = new ArrayList<>();
     }
 
     public void setShouldCalculateMatchOdds(Boolean shouldCalculateMatchOdds) {
@@ -121,19 +132,18 @@ public class MatchUpdateScheduler {
         }
     }
 
-    // modify to execute every 12 hours
-    @Scheduled(cron = "0 0 0 * * ?") // Cron expression for midnight (00:00:00) every day
+    @Scheduled(cron = "0 0 */12 * * *") // Cron expression for every 12 hours
     public void checkMatchesToday() {
         this.matchesToday = matchService.areThereMatchesToday();
     }
 
     @Scheduled(cron = "0 58 23 * * *")
-    public void startMidnightTask() {
+    public void startMidnightTasks() {
         midnightTaskExecuting = true;
     }
 
-    @Scheduled(cron = "0 2 0 * * *")
-    public void endMidnightTask() {
+    @Scheduled(cron = "50 2 0 * * *")
+    public void endMidnightTasks() {
         midnightTaskExecuting = false;
     }
 
@@ -157,5 +167,31 @@ public class MatchUpdateScheduler {
                 currentDate.plusDays(30),
                 true);
         shouldCalculateMatchOdds = true;
+    }
+
+    @Scheduled(cron = "10 0 0 * * *")
+    public void updateFirstHalfStandings() {
+        List<Competition> competitions = competitionService.getCompetitions();
+
+        for (int i = 0; i < 6; i++) {
+            this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
+        }
+    }
+
+    // standings need to be updated separately because the number of requests
+    // exceeds the maximum, so a one-minute wait is needed
+    @Scheduled(cron = "10 1 0 * * *")
+    @Transactional
+    public void updateSecondHalfStandings() {
+        List<Competition> competitions = competitionService.getCompetitions();
+
+        for (int i = 6; i < 12; i++) {
+            this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
+        }
+
+        standingsService.deleteStandings();
+        footballApiService.saveStandings(standingsList);
+
+        this.standingsList.clear();
     }
 }

@@ -1,4 +1,4 @@
-package com.example.betkickapi.response;
+package com.example.betkickapi.web.internal;
 
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.enums.Winner;

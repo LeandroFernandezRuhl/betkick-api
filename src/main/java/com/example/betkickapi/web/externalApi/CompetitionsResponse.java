@@ -1,4 +1,4 @@
-package com.example.betkickapi.response;
+package com.example.betkickapi.web.externalApi;
 
 import com.example.betkickapi.model.Competition;
 import lombok.Data;

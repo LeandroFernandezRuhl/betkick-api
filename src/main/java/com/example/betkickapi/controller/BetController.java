@@ -2,11 +2,11 @@ package com.example.betkickapi.controller;
 
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.User;
-import com.example.betkickapi.request.BetRequest;
-import com.example.betkickapi.response.BetHistoryResponse;
 import com.example.betkickapi.service.bet.BetService;
 import com.example.betkickapi.service.match.MatchService;
 import com.example.betkickapi.service.user.UserService;
+import com.example.betkickapi.web.internal.BetHistoryResponse;
+import com.example.betkickapi.web.internal.BetRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

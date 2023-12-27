@@ -1,8 +1,9 @@
 package com.example.betkickapi;
 
-import com.example.betkickapi.service.utility.FootballApiService;
+import com.example.betkickapi.model.Competition;
 import com.example.betkickapi.service.competition.CompetitionService;
-import jakarta.transaction.Transactional;
+import com.example.betkickapi.service.utility.FootballApiService;
+import com.example.betkickapi.web.externalApi.StandingsResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -12,17 +13,18 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
 @Slf4j
 public class StartupDataInitializer implements ApplicationRunner {
     private FootballApiService footballApiService;
-    private MatchUpdateScheduler matchUpdateScheduler;
+    private JobScheduler jobScheduler;
     private CompetitionService competitionService;
 
     @Override
-    @Transactional
     public void run(ApplicationArguments args) throws Exception {
         // wait a bit before initializing
         Thread.sleep(10000);
@@ -43,10 +45,21 @@ public class StartupDataInitializer implements ApplicationRunner {
                 currentDate.plusDays(20),
                 currentDate.plusDays(30),
                 false);
+        List<Competition> competitions = competitionService.getCompetitions();
+        List<StandingsResponse> responses = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            responses.add(footballApiService.fetchStandings(competitions.get(i)));
+        }
+        // wait for API requests to refill
+        Thread.sleep(60000);
+        for (int i = 6; i < 12; i++) {
+            responses.add(footballApiService.fetchStandings(competitions.get(i)));
+        }
+        footballApiService.saveStandings(responses);
         // wait for API requests to refill
         Thread.sleep(60000);
         System.out.println("API REQUESTS REPLENISHED");
-        matchUpdateScheduler.checkMatchesToday();
-        matchUpdateScheduler.setShouldCalculateMatchOdds(true);
+        jobScheduler.checkMatchesToday();
+        jobScheduler.setShouldCalculateMatchOdds(true);
     }
 }

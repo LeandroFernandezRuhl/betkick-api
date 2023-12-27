@@ -1,10 +1,10 @@
 package com.example.betkickapi.model;
 
+import com.example.betkickapi.model.embbeded.MatchOdds;
+import com.example.betkickapi.model.embbeded.Score;
 import com.example.betkickapi.model.enums.Duration;
 import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.model.enums.Winner;
-import com.example.betkickapi.model.embbeded.MatchOdds;
-import com.example.betkickapi.model.embbeded.Score;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,9 +1,12 @@
 package com.example.betkickapi.controller;
 
 import com.example.betkickapi.model.Competition;
+import com.example.betkickapi.model.CompetitionStandings;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
+import com.example.betkickapi.service.standings.StandingsService;
+import com.example.betkickapi.web.internal.CompetitionStandingsResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +25,7 @@ import java.util.List;
 public class FootballDataController {
     private CompetitionService competitionService;
     private MatchService matchService;
+    private StandingsService standingsService;
 
     @GetMapping("/competitions")
     public ResponseEntity<List<Competition>> getCompetitions() {
@@ -42,5 +46,13 @@ public class FootballDataController {
         log.info("Request to get matches of competition with ID " + competitionId + " received");
         return ResponseEntity.ok()
                 .body(matchService.getMatchesByCompetitionId(competitionId));
+    }
+
+    @GetMapping(value = "/standings", params = "competitionId")
+    public ResponseEntity<List<CompetitionStandingsResponse>> getStandingsByCompetitionId(@RequestParam Integer competitionId) {
+        log.info("Request to get standings of competition with ID " + competitionId + " received");
+
+        return ResponseEntity.ok()
+                .body(standingsService.getStandingsByCompetitionId(competitionId));
     }
 }

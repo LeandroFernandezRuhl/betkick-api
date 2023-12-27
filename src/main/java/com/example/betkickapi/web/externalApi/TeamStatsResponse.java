@@ -1,4 +1,4 @@
-package com.example.betkickapi.response;
+package com.example.betkickapi.web.externalApi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

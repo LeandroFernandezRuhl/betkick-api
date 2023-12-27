@@ -1,19 +1,13 @@
 package com.example.betkickapi.service.utility;
 
-import com.example.betkickapi.model.Competition;
-import com.example.betkickapi.model.Match;
-import com.example.betkickapi.model.Team;
-import com.example.betkickapi.model.enums.Status;
-import com.example.betkickapi.model.enums.Winner;
-import com.example.betkickapi.model.embbeded.Score;
-import com.example.betkickapi.response.TeamStatsResponse;
-import com.example.betkickapi.response.CompetitionsResponse;
-import com.example.betkickapi.response.HeadToHeadResponse;
-import com.example.betkickapi.response.MatchesResponse;
+import com.example.betkickapi.model.*;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
+import com.example.betkickapi.service.standings.StandingsService;
 import com.example.betkickapi.service.team.TeamService;
+import com.example.betkickapi.web.externalApi.*;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
@@ -30,21 +24,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
+@Slf4j
 public class FootballApiService {
     private RestTemplate restTemplate;
     private final String API_KEY;
     private CompetitionService competitionService;
     private MatchService matchService;
     private TeamService teamService;
+    private StandingsService standingsService;
 
     @Autowired
-    public FootballApiService(RestTemplate restTemplate, Environment env,
+    public FootballApiService(RestTemplate restTemplate, Environment env, StandingsService standingsService,
                               CompetitionService competitionService, MatchService matchService, TeamService teamService) {
         this.API_KEY = env.getProperty("API_KEY");
         this.restTemplate = restTemplate;
         this.competitionService = competitionService;
         this.matchService = matchService;
         this.teamService = teamService;
+        this.standingsService = standingsService;
     }
 
     // fetches the number of wins, draws and loses of a team
@@ -98,6 +95,43 @@ public class FootballApiService {
         return response.getBody().getCompetitions();
     }
 
+    public StandingsResponse fetchStandings(Competition competition) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", API_KEY);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<StandingsResponse> response = restTemplate.exchange(
+                "https://api.football-data.org/v4/competitions/{competitionId}/standings",
+                HttpMethod.GET,
+                entity,
+                StandingsResponse.class,
+                competition.getId()
+        );
+
+        return response.getBody();
+    }
+
+    @Transactional
+    public void saveStandings(List<StandingsResponse> responses) {
+        Set<Team> teams = responses.stream()
+                .flatMap(standingsResponse -> standingsResponse.getStandings().stream())
+                .flatMap(competitionStandings -> competitionStandings.getStandings().stream())
+                .map(Standing::getTeam)
+                // save teams that may not be in the DB yet, since a team could have a
+                // standing in a competition but not have any matches programmed soon enough to be picked up
+                // by the first execution of the method that fetches and saves upcoming matches (with the teams that play in them)
+                .filter(team -> team.getId() != null)
+                .collect(Collectors.toSet());
+        teamService.saveTeams(teams);
+
+        List<CompetitionStandings> standingsToSave = responses.stream()
+                .flatMap(response -> response.getStandings().stream()
+                        .peek(standings -> standings.setCompetition(response.getCompetition())))
+                .toList();
+
+        standingsService.saveStandings(standingsToSave);
+    }
+
     @Transactional
     public void fetchAndSaveMatches(LocalDate dateFrom, LocalDate dateTo, Boolean saveOrUpdate) {
         HttpHeaders headers = new HttpHeaders();
@@ -133,7 +167,7 @@ public class FootballApiService {
 
         List<Match> matches = response.getBody().getMatches();
         if (matches.size() > 0) {
-            matches.forEach(match -> match.setNew(false)); // entities are guaranteed to already be in the DB
+            matches.forEach(match -> match.setNew(false)); // entities are guaranteed to be in the DB
             matchService.updateMatches(matches);
         }
     }
@@ -163,55 +197,5 @@ public class FootballApiService {
             matchService.saveOrUpdateMatches(matches);
         else
             matchService.saveMatches(matches);
-    }
-
-    @Transactional
-    public void fetchAndUpdateMatchesTest() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Auth-Token", API_KEY);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<MatchesResponse> response = restTemplate.exchange(
-                "https://api.football-data.org/v4/matches",
-                HttpMethod.GET,
-                entity,
-                MatchesResponse.class
-        );
-
-        List<Match> matches = response.getBody().getMatches();
-
-        if (matches.size() > 0) {
-            System.out.println("MATCH TO TEST: ");
-            System.out.println(matches.get(1));
-            matches.get(1).setStatus(Status.FINISHED);
-            matches.get(1).setWinner(Winner.DRAW);
-            matches.forEach(match -> match.setNew(false)); // entities are guaranteed to already be in the DB
-            matchService.updateMatches(matches);
-        }
-    }
-
-    @Transactional
-    public void updateMatchesTest(LocalDate dateFrom, LocalDate dateTo) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Auth-Token", API_KEY);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<MatchesResponse> response = restTemplate.exchange(
-                "https://api.football-data.org/v4/matches?dateFrom={dateFrom}&dateTo={dateTo}",
-                HttpMethod.GET,
-                entity,
-                MatchesResponse.class,
-                dateFrom,
-                dateTo
-        );
-
-        List<Match> matches = response.getBody().getMatches();
-
-        matches.forEach(match -> {
-            match.setScore(new Score(0, 1, 20, 1));
-            match.setNew(false);
-        }); // entities are guaranteed to exist in the DB
-
-        matchService.updateMatches(matches);
     }
 }
