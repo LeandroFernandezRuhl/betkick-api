@@ -7,6 +7,7 @@ import com.example.betkickapi.model.User;
 import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.repository.BetRepository;
 import com.example.betkickapi.service.user.UserService;
+import com.example.betkickapi.service.utility.CacheService;
 import com.example.betkickapi.web.internal.BetHistoryResponse;
 import com.example.betkickapi.web.internal.BetRequest;
 import lombok.AllArgsConstructor;
@@ -26,19 +27,24 @@ public class BetServiceImpl implements BetService {
     private BetRepository betRepository;
     private UserService userService;
     private ModelMapper modelMapper;
+    private CacheService cacheService;
 
     @Override
     public void finishBets(Match finishedMatch) {
         List<Bet> betsToFinish = betRepository.findByMatchId(finishedMatch.getId());
-        betsToFinish.forEach(bet -> {
-            bet.setMatch(finishedMatch);
-            // if the user correctly guessed the winner of the match, he won the bot
-            bet.setIsWon(finishedMatch.getWinner() == bet.getWinner());
-            if (bet.getIsWon()) {
-                userService.incrementUserBalance(bet.getUser(), bet.getAmount() * bet.getOdds());
-            }
-        });
-        betRepository.saveAll(betsToFinish);
+        if (!betsToFinish.isEmpty()) {
+            betsToFinish.forEach(bet -> {
+                bet.setMatch(finishedMatch);
+                // if the user correctly guessed the winner of the match, he won the bot
+                bet.setIsWon(finishedMatch.getWinner() == bet.getWinner());
+                if (bet.getIsWon()) {
+                    userService.incrementUserBalance(bet.getUser(), bet.getAmount() * bet.getOdds());
+                }
+            });
+            betRepository.saveAll(betsToFinish);
+            // after bets are paid the leaderboard changes
+            cacheService.invalidateCacheForKey("leaderboard");
+        }
     }
 
     @Override

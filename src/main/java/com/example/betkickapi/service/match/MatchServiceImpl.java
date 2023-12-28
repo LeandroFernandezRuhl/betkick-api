@@ -148,7 +148,7 @@ public class MatchServiceImpl implements MatchService {
                 matches.stream().map(Match::getId).collect(Collectors.toList())
         );
 
-        // save new matches
+        // filter existent matches and save new matches
         List<Match> newMatches = matches.stream()
                 .filter(match -> !existingMatchIds.contains(match.getId()))
                 .toList();

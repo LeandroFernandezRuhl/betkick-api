@@ -5,9 +5,13 @@ import com.example.betkickapi.exception.AccountBalanceException;
 import com.example.betkickapi.exception.EntityNotFoundException;
 import com.example.betkickapi.model.User;
 import com.example.betkickapi.repository.UserRepository;
+import com.example.betkickapi.web.internal.UserBetSummary;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @AllArgsConstructor
 @Service
@@ -18,6 +22,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public Boolean existsById(String id) {
         return userRepository.existsById(id);
+    }
+
+    @Override
+    @Cacheable(value = "footballDataCache", key = "'leaderboard'")
+    public List<UserBetSummary> getUserLeaderboard() {
+        return userRepository.findEarningsAndBets();
     }
 
     @Override

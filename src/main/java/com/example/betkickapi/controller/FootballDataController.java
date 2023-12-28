@@ -6,7 +6,9 @@ import com.example.betkickapi.model.Match;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
 import com.example.betkickapi.service.standings.StandingsService;
+import com.example.betkickapi.service.user.UserService;
 import com.example.betkickapi.web.internal.CompetitionStandingsResponse;
+import com.example.betkickapi.web.internal.UserBetSummary;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,15 @@ public class FootballDataController {
     private CompetitionService competitionService;
     private MatchService matchService;
     private StandingsService standingsService;
+    private UserService userService;
+
+    @GetMapping("/leaderboard")
+    public ResponseEntity<List<UserBetSummary>> getLeaderboard() {
+        log.info("Request to get leaderboard received");
+
+        return ResponseEntity.ok()
+                .body(userService.getUserLeaderboard());
+    }
 
     @GetMapping("/competitions")
     public ResponseEntity<List<Competition>> getCompetitions() {
