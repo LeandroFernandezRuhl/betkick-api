@@ -36,7 +36,7 @@ public class MatchServiceImpl implements MatchService {
                 .withHour(0)
                 .withSecond(0)
                 .withNano(0);
-        // get today's matches that are not finished yet (don't have a winner)
+        // get today's matches that are not finished yet (those that don't have a winner)
         log.info("New cache key created: matches");
         return matchRepository.findAllByUtcDateIsAfterAndWinnerIsNull(currentDate);
     }

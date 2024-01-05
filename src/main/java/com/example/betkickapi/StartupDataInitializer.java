@@ -10,9 +10,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,36 +26,23 @@ public class StartupDataInitializer implements ApplicationRunner {
         // wait a bit before initializing
         Thread.sleep(10000);
         System.out.println("INITIALIZATION FINISHED");
-        competitionService.saveCompetitions(footballApiService.fetchCompetitions());
-        // get this month's matches, has to be done in 10 days intervals because of API restriction
-        Instant currentInstant = Instant.now();
-        LocalDate currentDate = LocalDate.ofInstant(currentInstant, ZoneOffset.UTC);
-        footballApiService.fetchAndSaveMatches(
-                currentDate,
-                currentDate.plusDays(10),
-                false);
-        footballApiService.fetchAndSaveMatches(
-                currentDate.plusDays(10),
-                currentDate.plusDays(20),
-                false);
-        footballApiService.fetchAndSaveMatches(
-                currentDate.plusDays(20),
-                currentDate.plusDays(30),
-                false);
+        competitionService.saveCompetitions(footballApiService.fetchCompetitions()); // 1 request
+        jobScheduler.saveUpcomingMatches(); // 9 requests
+        Thread.sleep(60000); // 10 requests made within a minute so wait till refill
         List<Competition> competitions = competitionService.getCompetitions();
         List<StandingsResponse> responses = new ArrayList<>();
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 6; i++) { // 6 requests, one per competition
             responses.add(footballApiService.fetchStandings(competitions.get(i)));
         }
-        // wait for API requests to refill
-        Thread.sleep(60000);
-        for (int i = 6; i < 12; i++) {
+        Thread.sleep(60000); // wait for API requests to refill
+        for (int i = 6; i < 12; i++) { // 6 requests, one per competition (total will always be 12)
             responses.add(footballApiService.fetchStandings(competitions.get(i)));
         }
+        // wait is needed because the 12 standings need to be saved together
         footballApiService.saveStandings(responses);
-        // wait for API requests to refill
+        // wait for API requests to refill so scheduled methods can execute properly
         Thread.sleep(60000);
-        System.out.println("API REQUESTS REPLENISHED");
+        jobScheduler.setSecondaryTasksCanExecute(true);
         jobScheduler.checkMatchesToday();
         jobScheduler.setShouldCalculateMatchOdds(true);
     }

@@ -32,8 +32,7 @@ public class JobScheduler {
     private StandingsService standingsService;
     private Boolean matchesToday;
     private Boolean shouldCalculateMatchOdds;
-    private Boolean midnightTaskExecuting;
-    private Boolean isFirstRequest;
+    private Boolean secondaryTasksCanExecute;
     private List<StandingsResponse> standingsList;
 
     public JobScheduler(FootballApiService footballApiService, CompetitionService competitionService,
@@ -45,8 +44,7 @@ public class JobScheduler {
         this.standingsService = standingsService;
         this.matchesToday = false;
         this.shouldCalculateMatchOdds = false;
-        this.midnightTaskExecuting = false;
-        this.isFirstRequest = true;
+        this.secondaryTasksCanExecute = false;
         this.standingsList = new ArrayList<>();
     }
 
@@ -54,10 +52,14 @@ public class JobScheduler {
         this.shouldCalculateMatchOdds = shouldCalculateMatchOdds;
     }
 
+    public void setSecondaryTasksCanExecute(Boolean secondaryTasksCanExecute) {
+        this.secondaryTasksCanExecute = secondaryTasksCanExecute;
+    }
+
     @Scheduled(fixedDelay = 65000)
     @Transactional
     public void scheduledOddsCalculation() {
-        if (shouldCalculateMatchOdds && !midnightTaskExecuting) {
+        if (shouldCalculateMatchOdds && secondaryTasksCanExecute) {
             List<Match> matches = matchService.findMatchesWithRandomOdds();
             if (matches.isEmpty()) {
                 log.info("NO MATCHES WITH RANDOM ODDS FOUND");
@@ -124,11 +126,10 @@ public class JobScheduler {
     @Scheduled(fixedDelay = 62000)
     @Transactional
     public void updateMatches() {
-        // 65 seconds to account for communication latency between this and the external API clocks
-        if ((isFirstRequest && matchesToday) || (matchesToday && !midnightTaskExecuting)) {
+        // 62 seconds to account for communication latency between this and the external API clocks
+        if (matchesToday && secondaryTasksCanExecute) {
             log.info("Scheduled task to update matches is being executed");
             footballApiService.fetchAndUpdateMatches();
-            isFirstRequest = false;
         }
     }
 
@@ -139,12 +140,14 @@ public class JobScheduler {
 
     @Scheduled(cron = "0 58 23 * * *")
     public void startMidnightTasks() {
-        midnightTaskExecuting = true;
+        log.warn("MIDNIGHT TASKS STARTING");
+        this.secondaryTasksCanExecute = false;
     }
 
-    @Scheduled(cron = "50 2 0 * * *")
+    @Scheduled(cron = "50 3 0 * * *")
     public void endMidnightTasks() {
-        midnightTaskExecuting = false;
+        log.warn("MIDNIGHT TASKS COMPLETED");
+        this.secondaryTasksCanExecute = true;
     }
 
     // a game's status and programmed date can change anytime, so it needs to be checked daily
@@ -154,25 +157,23 @@ public class JobScheduler {
         // get this month's matches, has to be done in 10 days intervals because of API restriction
         Instant currentInstant = Instant.now();
         LocalDate currentDate = LocalDate.ofInstant(currentInstant, ZoneOffset.UTC);
-        footballApiService.fetchAndSaveMatches(
-                currentDate,
-                currentDate.plusDays(10),
-                true);
-        footballApiService.fetchAndSaveMatches(
-                currentDate.plusDays(10),
-                currentDate.plusDays(20),
-                true);
-        footballApiService.fetchAndSaveMatches(
-                currentDate.plusDays(20),
-                currentDate.plusDays(30),
-                true);
+        int from = 0;
+        int to = 10;
+        // get matches from today to approx 3 months in the future
+        for (int i = 0; i < 9; i++) {
+            footballApiService.fetchAndSaveMatches(
+                    currentDate.plusDays(from),
+                    currentDate.plusDays(to),
+                    false);
+            from += 10;
+            to += 10;
+        }
         shouldCalculateMatchOdds = true;
     }
 
-    @Scheduled(cron = "10 0 0 * * *")
+    @Scheduled(cron = "10 1 0 * * *")
     public void updateFirstHalfStandings() {
         List<Competition> competitions = competitionService.getCompetitions();
-
         for (int i = 0; i < 6; i++) {
             this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
         }
@@ -180,7 +181,7 @@ public class JobScheduler {
 
     // standings need to be updated separately because the number of requests
     // exceeds the maximum, so a one-minute wait is needed
-    @Scheduled(cron = "10 1 0 * * *")
+    @Scheduled(cron = "10 2 0 * * *")
     @Transactional
     public void updateSecondHalfStandings() {
         List<Competition> competitions = competitionService.getCompetitions();

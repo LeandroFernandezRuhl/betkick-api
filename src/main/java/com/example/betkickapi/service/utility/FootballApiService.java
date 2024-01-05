@@ -119,13 +119,14 @@ public class FootballApiService {
                 .map(Standing::getTeam)
                 // save teams that may not be in the DB yet, since a team could have a
                 // standing in a competition but not have any matches programmed soon enough to be picked up
-                // by the first execution of the method that fetches and saves upcoming matches (with the teams that play in them)
+                // by the method that fetches and saves upcoming matches
                 .filter(team -> team.getId() != null)
                 .collect(Collectors.toSet());
         teamService.saveTeams(teams);
 
         List<CompetitionStandings> standingsToSave = responses.stream()
-                .flatMap(response -> response.getStandings().stream()
+                .flatMap(response -> response.getStandings()
+                        .stream()
                         .peek(standings -> standings.setCompetition(response.getCompetition())))
                 .toList();
 
@@ -147,7 +148,14 @@ public class FootballApiService {
                 dateTo
         );
 
-        this.saveMatches(response.getBody().getMatches(), saveOrUpdate);
+        List<Match> matches = response.getBody().getMatches();
+        matches = matches
+                .stream()
+                .filter(match -> match.getAwayTeam().getId() != null && match.getHomeTeam().getId() != null)
+                .toList();
+
+        if (!matches.isEmpty())
+            this.saveMatches(matches, saveOrUpdate);
     }
 
 
@@ -181,9 +189,9 @@ public class FootballApiService {
         teamService.saveTeams(teams);
 
         matches.forEach(match -> {
-            // because of the API's design all teams and competitions
-            // are guaranteed to already exist in DB, so this gets
-            // proxy objects to avoid unnecessary selects that check for
+            // because of the APIs design all teams and competitions
+            // are guaranteed to already exist in DB by this point, so this code gets
+            // proxy objects for each match to avoid unnecessary selects that check for
             // the entities existence
             Integer homeTeamId = match.getHomeTeam().getId();
             Integer awayTeamId = match.getAwayTeam().getId();

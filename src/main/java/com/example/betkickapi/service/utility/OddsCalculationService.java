@@ -127,15 +127,18 @@ public class OddsCalculationService {
     }
 
     private double calculateOdds(Double probability) {
-        return 1D / probability;
+        double odds = 1D / probability;
+        if (odds <= 1D)
+            return Math.max(odds / 2D + 1D, 1.1D);
+        return odds;
     }
 
     private Double calculateWinProbability(Double teamWinRate, Double recentTeamWinRate,
                                            Double h2hWinRate, Double recentH2hWinRate) {
         if (recentH2hWinRate == null) {
             // if there are no recent h2h matches, redistribute that weight equally
-            return teamWinRate * (teamRatesWeight + recentH2hRatesWeight / 3) + recentTeamWinRate * (recentTeamRatesWeight + recentH2hRatesWeight / 3) +
-                    h2hWinRate * (h2hRatesWeight + recentH2hRatesWeight / 3);
+            return teamWinRate * (teamRatesWeight + recentH2hRatesWeight / 3D) + recentTeamWinRate * (recentTeamRatesWeight + recentH2hRatesWeight / 3D) +
+                    h2hWinRate * (h2hRatesWeight + recentH2hRatesWeight / 3D);
         }
 
         return teamWinRate * teamRatesWeight + recentTeamWinRate * recentTeamRatesWeight +
@@ -145,13 +148,13 @@ public class OddsCalculationService {
     private Double calculateDrawProbability(Double homeDrawRate, Double awayDrawRate,
                                             Double recentHomeDrawRate, Double recentAwayDrawRate,
                                             Double h2hDrawRate, Double recentH2hDrawRate) {
-        Double teamsDrawAvg = (homeDrawRate + awayDrawRate) / 2;
-        Double recentTeamsDrawAvg = (recentHomeDrawRate + recentAwayDrawRate) / 2;
+        Double teamsDrawAvg = (homeDrawRate + awayDrawRate) / 2D;
+        Double recentTeamsDrawAvg = (recentHomeDrawRate + recentAwayDrawRate) / 2D;
 
         if (recentH2hDrawRate == null) {
             // if there are no recent h2h matches, redistribute that weight equally
-            return teamsDrawAvg * (teamRatesWeight + recentH2hRatesWeight / 3) + recentTeamsDrawAvg * (recentTeamRatesWeight + recentH2hRatesWeight / 3) +
-                    h2hDrawRate * (h2hRatesWeight + recentH2hRatesWeight / 3);
+            return teamsDrawAvg * (teamRatesWeight + recentH2hRatesWeight / 3D) + recentTeamsDrawAvg * (recentTeamRatesWeight + recentH2hRatesWeight / 3D) +
+                    h2hDrawRate * (h2hRatesWeight + recentH2hRatesWeight / 3D);
         }
 
         return teamsDrawAvg * teamRatesWeight + recentTeamsDrawAvg * recentTeamRatesWeight +
