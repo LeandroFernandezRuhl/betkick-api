@@ -1,6 +1,7 @@
 package com.example.betkickapi.service.standings;
 
 import com.example.betkickapi.model.CompetitionStandings;
+import com.example.betkickapi.model.Standing;
 import com.example.betkickapi.web.internal.CompetitionStandingsResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,4 +18,8 @@ public interface StandingsService {
 
     @Transactional
     void deleteStandings();
+
+    List<Standing> getStandingsByCompIdAndTeams(Integer compId, Integer homeTeamId, Integer awayTeamId);
+
+    Integer countStandingsByCompId(Integer compId);
 }

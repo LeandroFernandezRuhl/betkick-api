@@ -84,4 +84,14 @@ public class StandingsServiceImpl implements StandingsService {
         standingRepository.deleteAll();
         competitionStandingsRepository.deleteAll();
     }
+
+    @Override
+    public List<Standing> getStandingsByCompIdAndTeams(Integer compId, Integer homeTeamId, Integer awayTeamId) {
+        return standingRepository.findStandingsByCompAndTeams(compId, homeTeamId, awayTeamId);
+    }
+
+    @Override
+    public Integer countStandingsByCompId(Integer compId) {
+        return standingRepository.countStandingsByCompId(compId);
+    }
 }

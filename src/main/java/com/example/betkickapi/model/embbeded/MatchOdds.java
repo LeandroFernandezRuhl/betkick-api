@@ -21,13 +21,13 @@ public class MatchOdds {
 
     public MatchOdds generateRandomOdds() {
         Random random = new Random();
-        this.awayWinsOdds = BigDecimal.valueOf(1.1 + (4D - 0.1) * random.nextDouble())
+        this.awayWinsOdds = BigDecimal.valueOf(1.1 + (2.5D - 0.1) * random.nextDouble())
                 .setScale(1, RoundingMode.HALF_DOWN)
                 .doubleValue();
-        this.homeWinsOdds = BigDecimal.valueOf(1.1 + (4D - 0.1) * random.nextDouble())
+        this.homeWinsOdds = BigDecimal.valueOf(1.1 + (2.5D - 0.1) * random.nextDouble())
                 .setScale(1, RoundingMode.HALF_DOWN)
                 .doubleValue();
-        this.drawOdds = BigDecimal.valueOf(1.1 + (4D - 0.1) * random.nextDouble())
+        this.drawOdds = BigDecimal.valueOf(1.1 + (2.5D - 0.1) * random.nextDouble())
                 .setScale(1, RoundingMode.HALF_DOWN)
                 .doubleValue();
         this.temporaryRandomOdds = true;

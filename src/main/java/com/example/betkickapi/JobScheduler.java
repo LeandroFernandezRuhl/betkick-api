@@ -2,6 +2,7 @@ package com.example.betkickapi;
 
 import com.example.betkickapi.model.Competition;
 import com.example.betkickapi.model.Match;
+import com.example.betkickapi.model.Standing;
 import com.example.betkickapi.model.embbeded.MatchOdds;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
@@ -105,11 +106,15 @@ public class JobScheduler {
             h2hHomeStats.unpackNestedMatches(homeId);
         }
 
+
+        List<Standing> standings = standingsService.getStandingsByCompIdAndTeams(match.getCompetition().getId(), homeId, awayId);
+        Integer totalTeams = standingsService.countStandingsByCompId(standings.getFirst().getCompetition().getId());
+
         log.info("CALCULATING ODDS FOR " + match.getHomeTeam().getShortName() + " (HOME) VS (AWAY) " + match.getAwayTeam().getShortName());
         log.info("Match ID: " + match.getId());
 
         // Calculate odds using fetched statistics and head-to-head data
-        MatchOdds calculatedOdds = oddsService.generateMatchOdds(homeStats, awayStats, headToHead);
+        MatchOdds calculatedOdds = oddsService.generateMatchOdds(homeStats, awayStats, headToHead, standings, homeId, totalTeams);
 
         if (calculatedOdds != null) {
             match.setOdds(calculatedOdds);
