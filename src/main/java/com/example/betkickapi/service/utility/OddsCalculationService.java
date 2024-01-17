@@ -136,7 +136,7 @@ public class OddsCalculationService {
         HashMap<StandingRates, Double> homeStandingRates = new HashMap<>();
         HashMap<StandingRates, Double> awayStandingRates = new HashMap<>();
 
-        if (this.validateStandings(standings)) {
+        if (standings != null && this.validateStandings(standings)) {
             Standing homeStanding = null;
             Standing awayStanding = null;
 

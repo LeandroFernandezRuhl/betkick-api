@@ -17,6 +17,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.MessageFormat;
 
 import static java.util.Map.of;
@@ -34,8 +36,15 @@ public class UserController {
     }
 
     @GetMapping("/api/user/balance")
-    public ResponseEntity<Double> getUserBalance(String userId) {
-        return ResponseEntity.ok(userService.findById(userId).getAccountBalance());
+    public ResponseEntity<Double> getUserBalance(@RequestParam String userId) {
+        try {
+            String decodedUserId = URLDecoder.decode(userId, "UTF-8");
+
+            Double balance = userService.findById(decodedUserId).getAccountBalance();
+            return ResponseEntity.ok(balance);
+        } catch (UnsupportedEncodingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PostMapping("/api/user/withdraw")

@@ -108,7 +108,12 @@ public class JobScheduler {
 
 
         List<Standing> standings = standingsService.getStandingsByCompIdAndTeams(match.getCompetition().getId(), homeId, awayId);
-        Integer totalTeams = standingsService.countStandingsByCompId(standings.getFirst().getCompetition().getId());
+        Integer totalTeams = 0;
+        if (!standings.isEmpty())
+            totalTeams = standingsService.countStandingsByCompId(standings.getFirst().getCompetition().getId());
+        else {
+            standings = null;
+        }
 
         log.info("CALCULATING ODDS FOR " + match.getHomeTeam().getShortName() + " (HOME) VS (AWAY) " + match.getAwayTeam().getShortName());
         log.info("Match ID: " + match.getId());
