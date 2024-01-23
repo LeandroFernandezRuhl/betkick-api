@@ -13,6 +13,7 @@ import com.example.betkickapi.web.externalApi.HeadToHeadResponse;
 import com.example.betkickapi.web.externalApi.StandingsResponse;
 import com.example.betkickapi.web.externalApi.TeamStatsResponse;
 import jakarta.transaction.Transactional;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,9 @@ public class JobScheduler {
     private CompetitionService competitionService;
     private StandingsService standingsService;
     private Boolean matchesToday;
+    @Setter
     private Boolean shouldCalculateMatchOdds;
+    @Setter
     private Boolean secondaryTasksCanExecute;
     private List<StandingsResponse> standingsList;
 
@@ -47,14 +50,6 @@ public class JobScheduler {
         this.shouldCalculateMatchOdds = false;
         this.secondaryTasksCanExecute = false;
         this.standingsList = new ArrayList<>();
-    }
-
-    public void setShouldCalculateMatchOdds(Boolean shouldCalculateMatchOdds) {
-        this.shouldCalculateMatchOdds = shouldCalculateMatchOdds;
-    }
-
-    public void setSecondaryTasksCanExecute(Boolean secondaryTasksCanExecute) {
-        this.secondaryTasksCanExecute = secondaryTasksCanExecute;
     }
 
     @Scheduled(fixedDelay = 65000)

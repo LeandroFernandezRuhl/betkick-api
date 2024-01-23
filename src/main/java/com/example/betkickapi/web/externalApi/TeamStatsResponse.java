@@ -24,13 +24,13 @@ public class TeamStatsResponse {
 
     @JsonProperty("resultSet")
     private void unpackNestedResultSet(Map<String, Object> resultSet) {
-        this.wins = ((Integer) resultSet.get("wins")).doubleValue();
-        this.draws = ((Integer) resultSet.get("draws")).doubleValue();
-        this.losses = ((Integer) resultSet.get("losses")).doubleValue();
+        this.wins = resultSet.get("wins") == null ? 0 : ((Integer) resultSet.get("wins")).doubleValue();
+        this.draws = resultSet.get("draws") == null ? 0 : ((Integer) resultSet.get("draws")).doubleValue();
+        this.losses = resultSet.get("losses") == null ? 0 : ((Integer) resultSet.get("losses")).doubleValue();
     }
 
     // this method needs to be called manually because teamName argument can't be passed when deserializing automatically
-     public void unpackNestedMatches(Integer teamId) {
+    public void unpackNestedMatches(Integer teamId) {
         int count = 0;
         recentWins = 0d;
         recentDraws = 0d;
@@ -44,7 +44,7 @@ public class TeamStatsResponse {
 
             String winner = (String) ((Map<String, Object>) match.get("score")).get("winner");
             if (winner == null)
-                continue;;
+                continue;
 
             Integer homeTeamId = (Integer) ((Map<String, Object>) match.get("homeTeam")).get("id");
             Integer awayTeamId = (Integer) ((Map<String, Object>) match.get("awayTeam")).get("id");
