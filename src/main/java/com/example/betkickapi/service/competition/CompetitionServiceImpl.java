@@ -29,9 +29,14 @@ public class CompetitionServiceImpl implements CompetitionService {
     }
 
     @Override
+    @Cacheable(value = "footballDataCache", key = "'activeCompetitions'")
+    public List<Competition> getActiveCompetitions() {
+        return competitionRepository.findAllCompetitionsWithMatches();
+    }
+
+    @Override
     @Cacheable(value = "footballDataCache", key = "'allCompetitions'")
-    // remember to make an update method with @CachePut (?)
-    public List<Competition> getCompetitions() {
+    public List<Competition> getAllCompetitions() {
         return competitionRepository.findAll();
     }
 }

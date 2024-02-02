@@ -39,7 +39,7 @@ public class BetController {
     }
 
     @GetMapping("/api/user/bets")
-    public ResponseEntity<List<BetHistoryResponse>> makeBets(@RequestParam @NotNull String userId) {
+    public ResponseEntity<List<BetHistoryResponse>> getUserBets(@RequestParam @NotNull String userId) {
         log.info("Request to retrieve bet history received!");
         List<BetHistoryResponse> response = betService.findBetsByUserId(userId);
         return ResponseEntity.ok(response);

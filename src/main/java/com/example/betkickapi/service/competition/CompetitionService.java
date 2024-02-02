@@ -11,5 +11,7 @@ public interface CompetitionService {
 
     Competition getReference(Integer id);
 
-    List<Competition> getCompetitions();
+    List<Competition> getActiveCompetitions();
+
+    List<Competition> getAllCompetitions();
 }

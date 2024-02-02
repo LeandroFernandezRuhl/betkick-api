@@ -178,7 +178,7 @@ public class JobScheduler {
 
     @Scheduled(cron = "10 1 0 * * *")
     public void updateFirstHalfStandings() {
-        List<Competition> competitions = competitionService.getCompetitions();
+        List<Competition> competitions = competitionService.getAllCompetitions();
         for (int i = 0; i < 6; i++) {
             this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
         }
@@ -189,7 +189,7 @@ public class JobScheduler {
     @Scheduled(cron = "10 2 0 * * *")
     @Transactional
     public void updateSecondHalfStandings() {
-        List<Competition> competitions = competitionService.getCompetitions();
+        List<Competition> competitions = competitionService.getAllCompetitions();
 
         for (int i = 6; i < 12; i++) {
             this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));

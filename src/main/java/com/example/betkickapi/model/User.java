@@ -20,9 +20,11 @@ import java.util.List;
                         "FROM user U " +
                         "JOIN bet B ON U.id = B.user_id " +
                         "GROUP BY U.id, U.name " +
-                        "ORDER BY SUM(CASE WHEN B.is_won = TRUE THEN 1 ELSE 0 END) - " +
+                        "HAVING SUM(CASE WHEN B.is_won = TRUE THEN 1 ELSE 0 END) <> 0 OR " + // filter users that have yet to
+                        "SUM(CASE WHEN B.is_won = FALSE THEN 1 ELSE 0 END) <> 0 " +                // win or lose their first bet
+                        "ORDER BY SUM(CASE WHEN B.is_won = TRUE THEN 1 ELSE 0 END) - " +     // order by bets won - bets lost first
                         "SUM(CASE WHEN B.is_won = FALSE THEN 1 ELSE 0 END) DESC, " +
-                        "SUM(CASE WHEN B.is_won = TRUE THEN B.amount * B.odds ELSE 0 END) - " +
+                        "SUM(CASE WHEN B.is_won = TRUE THEN B.amount * B.odds ELSE 0 END) - " + // order by amount won - amount lost second
                         "SUM(CASE WHEN B.is_won = FALSE THEN B.amount ELSE 0 END) DESC",
         resultSetMapping = "Mapping.UserBetSummary"
 )

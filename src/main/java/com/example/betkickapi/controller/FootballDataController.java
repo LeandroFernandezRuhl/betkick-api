@@ -1,7 +1,6 @@
 package com.example.betkickapi.controller;
 
 import com.example.betkickapi.model.Competition;
-import com.example.betkickapi.model.CompetitionStandings;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
@@ -38,16 +37,16 @@ public class FootballDataController {
                 .body(userService.getUserLeaderboard());
     }
 
-    @GetMapping("/competitions")
-    public ResponseEntity<List<Competition>> getCompetitions() {
+    @GetMapping("/active-competitions")
+    public ResponseEntity<List<Competition>> getActiveCompetitions() {
         log.info("Request to get competitions received");
         return ResponseEntity.ok()
-                .body(competitionService.getCompetitions());
+                .body(competitionService.getActiveCompetitions());
     }
 
     @GetMapping("/matches")
-    public ResponseEntity<List<Match>> getTodayMatches() {
-        log.info("Request to get today's matches received");
+    public ResponseEntity<List<Match>> getMatches() {
+        log.info("Request to get matches received");
         return ResponseEntity.ok()
                 .body(matchService.getMatches()); // remember to change to today's matches
     }

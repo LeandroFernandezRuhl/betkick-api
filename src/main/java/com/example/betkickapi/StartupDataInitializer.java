@@ -29,7 +29,7 @@ public class StartupDataInitializer implements ApplicationRunner {
         competitionService.saveCompetitions(footballApiService.fetchCompetitions()); // 1 request
         jobScheduler.saveUpcomingMatches(); // 9 requests
         Thread.sleep(60000); // 10 requests made within a minute so wait till refill
-        List<Competition> competitions = competitionService.getCompetitions();
+        List<Competition> competitions = competitionService.getAllCompetitions();
         List<StandingsResponse> responses = new ArrayList<>();
         for (int i = 0; i < 6; i++) { // 6 requests, one per competition
             responses.add(footballApiService.fetchStandings(competitions.get(i)));
