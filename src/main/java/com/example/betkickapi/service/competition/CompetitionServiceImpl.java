@@ -20,6 +20,37 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     @Override
     public void saveCompetitions(List<Competition> competitions) {
+        // add short names
+        for (Competition comp : competitions) {
+            switch (comp.getCode()) {
+                case ("WC"):
+                    comp.setShortName("World Cup");
+                    break;
+                case ("CL"):
+                    comp.setShortName("Champions");
+                    break;
+                case ("BSA"):
+                    comp.setShortName("Brasileirão");
+                    break;
+                case ("PL"):
+                    comp.setShortName("Premier");
+                    break;
+                case ("EC"):
+                    comp.setShortName("Euro");
+                    break;
+                case ("PPL"):
+                    comp.setShortName("Primeira");
+                    break;
+                case ("CLI"):
+                    comp.setShortName("Libertadores");
+                    break;
+                case ("PD"):
+                    comp.setShortName("LaLiga");
+                    break;
+                default:
+                    // do nothing
+            }
+        }
         competitionRepository.saveAll(competitions);
     }
 

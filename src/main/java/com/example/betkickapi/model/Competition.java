@@ -17,6 +17,7 @@ public class Competition extends AbstractPersistableEntity<Integer> {
     @EqualsAndHashCode.Include
     private Integer id;
     private String name;
+    private String shortName;
     private String code;
     private String emblem; // image url
 }
