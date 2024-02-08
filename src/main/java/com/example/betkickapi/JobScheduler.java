@@ -7,6 +7,7 @@ import com.example.betkickapi.model.embbeded.MatchOdds;
 import com.example.betkickapi.service.competition.CompetitionService;
 import com.example.betkickapi.service.match.MatchService;
 import com.example.betkickapi.service.standings.StandingsService;
+import com.example.betkickapi.service.utility.CacheService;
 import com.example.betkickapi.service.utility.FootballApiService;
 import com.example.betkickapi.service.utility.OddsCalculationService;
 import com.example.betkickapi.web.externalApi.HeadToHeadResponse;
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @Component
@@ -32,6 +34,7 @@ public class JobScheduler {
     private OddsCalculationService oddsService;
     private CompetitionService competitionService;
     private StandingsService standingsService;
+    private CacheService cacheService;
     private Boolean matchesToday;
     @Setter
     private Boolean shouldCalculateMatchOdds;
@@ -39,11 +42,12 @@ public class JobScheduler {
     private Boolean secondaryTasksCanExecute;
     private List<StandingsResponse> standingsList;
 
-    public JobScheduler(FootballApiService footballApiService, CompetitionService competitionService,
+    public JobScheduler(FootballApiService footballApiService, CompetitionService competitionService, CacheService cacheService,
                         MatchService matchService, OddsCalculationService oddsService, StandingsService standingsService) {
         this.footballApiService = footballApiService;
         this.competitionService = competitionService;
         this.matchService = matchService;
+        this.cacheService = cacheService;
         this.oddsService = oddsService;
         this.standingsService = standingsService;
         this.matchesToday = false;
@@ -174,6 +178,7 @@ public class JobScheduler {
             to += 10;
         }
         shouldCalculateMatchOdds = true;
+        cacheService.invalidateCacheForKey("activeCompetitions");
     }
 
     @Scheduled(cron = "10 1 0 * * *")
@@ -199,5 +204,6 @@ public class JobScheduler {
         footballApiService.saveStandings(standingsList);
 
         this.standingsList.clear();
+        cacheService.invalidateCacheForKey("competitionsWithStandings");
     }
 }

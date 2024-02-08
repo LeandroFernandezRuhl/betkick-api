@@ -18,10 +18,10 @@ public class CacheConfiguration {
     }
 
     Caffeine<Object, Object> caffeineCacheBuilder() {
-        // each matches by competition cache (12) + competitions cache (1) + active competitions cache (1)
-        // + matches cache (1) + standings cache (12) + leaderboard (1) = 28
+        // each matches by competition (12) + competitions (1) + active competitions (1) +
+        // competitions that have standings (1) + matches (1) + standings (12) + leaderboard (1) = 29
         return Caffeine.newBuilder()
-                .initialCapacity(28)
-                .maximumSize(28);
+                .initialCapacity(29)
+                .maximumSize(29);
     }
 }

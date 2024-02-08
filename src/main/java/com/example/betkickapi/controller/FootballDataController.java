@@ -39,9 +39,16 @@ public class FootballDataController {
 
     @GetMapping("/active-competitions")
     public ResponseEntity<List<Competition>> getActiveCompetitions() {
-        log.info("Request to get competitions received");
+        log.info("Request to get active competitions received");
         return ResponseEntity.ok()
                 .body(competitionService.getActiveCompetitions());
+    }
+
+    @GetMapping("/competitions-with-standings")
+    public ResponseEntity<List<Competition>> getCompetitionsWithStandings() {
+        log.info("Request to get with standings competitions received");
+        List<Competition> comps = competitionService.getCompetitionsWithStandings();
+        return ResponseEntity.ok().body(comps);
     }
 
     @GetMapping("/matches")
