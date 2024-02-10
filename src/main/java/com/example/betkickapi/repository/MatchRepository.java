@@ -8,7 +8,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -44,8 +43,8 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +
             "LEFT JOIN FETCH m.awayTeam " +
-            "WHERE m.utcDate > :date AND m.winner IS NULL")
-    List<Match> findAllByUtcDateIsAfterAndWinnerIsNull(@Param("date") LocalDateTime date);
+            "WHERE m.status <> 'AWARDED' AND m.status <> 'FINISHED' AND m.winner IS NULL")
+    List<Match> findAllUnfinishedMatches();
 
     @Query("SELECT m.id FROM Match m WHERE m.id IN :ids")
     List<Integer> findExistingMatchIds(@Param("ids") List<Integer> ids);

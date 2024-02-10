@@ -31,14 +31,9 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Cacheable(value = "footballDataCache", key = "'matches'")
     public List<Match> getMatches() {
-        Instant currentInstant = Instant.now();
-        LocalDateTime currentDate = LocalDateTime.ofInstant(currentInstant, ZoneOffset.UTC)
-                .withHour(0)
-                .withSecond(0)
-                .withNano(0);
         // get today's matches that are not finished yet (those that don't have a winner)
         log.info("New cache key created: matches");
-        return matchRepository.findAllByUtcDateIsAfterAndWinnerIsNull(currentDate);
+        return matchRepository.findAllUnfinishedMatches();
     }
 
     @Override
@@ -109,6 +104,7 @@ public class MatchServiceImpl implements MatchService {
                     matchInDb.setScore(updatedMatch.getScore());
                     matchInDb.setDuration(updatedMatch.getDuration());
                     matchInDb.setUtcDate(updatedMatch.getUtcDate());
+                    matchInDb.setWinner(updatedMatch.getWinner());
                     // a match has finished so bet earnings have to be paid
                     if ((matchInDb.getStatus() != Status.FINISHED && matchInDb.getStatus() != Status.AWARDED)
                             && (updatedMatch.getStatus() == Status.FINISHED || updatedMatch.getStatus() == Status.AWARDED)) {
