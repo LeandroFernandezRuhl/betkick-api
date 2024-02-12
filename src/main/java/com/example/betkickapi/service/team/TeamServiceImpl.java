@@ -22,6 +22,11 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
+    public Team saveTeam(Team team) {
+        return teamRepository.save(team);
+    }
+
+    @Override
     public Team getReference(Integer id) {
         return teamRepository.getReferenceById(id);
     }

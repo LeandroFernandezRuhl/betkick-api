@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +33,11 @@ public class MatchServiceImpl implements MatchService {
         // get today's matches that are not finished yet (those that don't have a winner)
         log.info("New cache key created: matches");
         return matchRepository.findAllUnfinishedMatches();
+    }
+
+    @Override
+    public Match saveMatch(Match match) {
+        return matchRepository.save(match);
     }
 
     @Override

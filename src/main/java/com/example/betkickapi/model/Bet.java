@@ -32,6 +32,5 @@ public class Bet {
     @ManyToOne
     @JoinColumn(name = "match_id")
     private Match match; //validate that matches ids in a given list are different
-    //@Embedded
-    //private Score score;
+
 }

@@ -22,5 +22,7 @@ public interface MatchService {
 
     List<Match> getMatches();
 
+    Match saveMatch(Match match);
+
     List<Match> getMatchesByCompetitionId(Integer id);
 }

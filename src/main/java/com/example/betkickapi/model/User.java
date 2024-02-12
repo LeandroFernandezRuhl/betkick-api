@@ -12,20 +12,25 @@ import java.util.List;
 @NamedNativeQuery(
         name = "User.findEarningsAndBets",
         query =
-                "SELECT U.name, " +
-                        "SUM(CASE WHEN B.is_won = TRUE THEN B.amount * B.odds ELSE 0 END) - " +
-                        "SUM(CASE WHEN B.is_won = FALSE THEN B.amount ELSE 0 END) AS earnings, " +
-                        "SUM(CASE WHEN B.is_won = TRUE THEN 1 ELSE 0 END) AS bets_won, " +
-                        "SUM(CASE WHEN B.is_won = FALSE THEN 1 ELSE 0 END) AS bets_lost " +
+                // Ordering logic: prioritize users based on a weighted combination of
+                // win rate, total number of won bets, and net profit
+                "SELECT ROW_NUMBER() OVER (ORDER BY " +
+                        "(SUM(IF(B.is_won = TRUE, 1, 0)) * 100.0 / COUNT(B.id)) * 0.55 + " +
+                        "(COUNT(B.id) * 0.3) + " +
+                        "(SUM(IF(B.is_won = TRUE, B.amount * B.odds, 0)) - " +
+                        "SUM(IF(B.is_won = FALSE, B.amount, 0))) * 0.15 DESC) AS position, " +
+
+                        "U.name, " +
+                        "SUM(IF(B.is_won = TRUE, B.amount * B.odds, 0)) - " +
+                        "SUM(IF(B.is_won = FALSE, B.amount, 0)) AS earnings, " +
+                        "SUM(IF(B.is_won = TRUE, 1, 0)) AS bets_won, " +
+                        "SUM(IF(B.is_won = FALSE, 1, 0)) AS bets_lost " +
                         "FROM user U " +
                         "JOIN bet B ON U.id = B.user_id " +
                         "GROUP BY U.id, U.name " +
-                        "HAVING SUM(CASE WHEN B.is_won = TRUE THEN 1 ELSE 0 END) <> 0 OR " + // filter users that have yet to
-                        "SUM(CASE WHEN B.is_won = FALSE THEN 1 ELSE 0 END) <> 0 " +                // win or lose their first bet
-                        "ORDER BY SUM(CASE WHEN B.is_won = TRUE THEN 1 ELSE 0 END) - " +     // order by bets won - bets lost first
-                        "SUM(CASE WHEN B.is_won = FALSE THEN 1 ELSE 0 END) DESC, " +
-                        "SUM(CASE WHEN B.is_won = TRUE THEN B.amount * B.odds ELSE 0 END) - " + // order by amount won - amount lost second
-                        "SUM(CASE WHEN B.is_won = FALSE THEN B.amount ELSE 0 END) DESC",
+                        "HAVING SUM(IF(B.is_won = TRUE, 1, 0)) <> 0 OR " +
+                        "SUM(IF(B.is_won = FALSE, 1, 0)) <> 0 " +
+                        "ORDER BY position",
         resultSetMapping = "Mapping.UserBetSummary"
 )
 @SqlResultSetMapping(
@@ -33,6 +38,7 @@ import java.util.List;
         classes = @ConstructorResult(
                 targetClass = UserBetSummary.class,
                 columns = {
+                        @ColumnResult(name = "position", type = Integer.class),
                         @ColumnResult(name = "name", type = String.class),
                         @ColumnResult(name = "earnings", type = Double.class),
                         @ColumnResult(name = "bets_won", type = Long.class),

@@ -48,6 +48,11 @@ public class BetServiceImpl implements BetService {
     }
 
     @Override
+    public void createFinishedBets(List<Bet> bets) {
+        betRepository.saveAll(bets);
+    }
+
+    @Override
     public Double cancelBet(Integer betId) {
         Bet bet = betRepository.findById(betId)
                 .orElseThrow(() -> new EntityNotFoundException(Bet.class, "betId", betId.toString()));

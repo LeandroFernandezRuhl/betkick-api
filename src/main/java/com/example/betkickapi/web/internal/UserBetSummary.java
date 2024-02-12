@@ -12,6 +12,7 @@ import java.math.BigInteger;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserBetSummary {
+    private Integer position;
     private String name;
     private Double earnings;
     private Long betsWon;
