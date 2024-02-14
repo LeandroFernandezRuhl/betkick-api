@@ -1,5 +1,6 @@
 package com.example.betkickapi;
 
+import com.example.betkickapi.dto.external_api.StandingsResponse;
 import com.example.betkickapi.model.*;
 import com.example.betkickapi.model.embbeded.MatchOdds;
 import com.example.betkickapi.model.embbeded.Score;
@@ -12,7 +13,6 @@ import com.example.betkickapi.service.match.MatchService;
 import com.example.betkickapi.service.team.TeamService;
 import com.example.betkickapi.service.user.UserService;
 import com.example.betkickapi.service.utility.FootballApiService;
-import com.example.betkickapi.web.externalApi.StandingsResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -39,7 +39,7 @@ public class StartupDataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        // wait a bit before initializing
+        // Wait a bit before initializing
         Thread.sleep(10000);
         System.out.println("INITIALIZATION FINISHED");
         competitionService.saveCompetitions(footballApiService.fetchCompetitions()); // 1 request
@@ -54,9 +54,9 @@ public class StartupDataInitializer implements ApplicationRunner {
         for (int i = 6; i < 12; i++) { // 6 requests, one per competition (total will always be 12)
             responses.add(footballApiService.fetchStandings(competitions.get(i)));
         }
-        // wait is needed because the 12 standings need to be saved together
+        // Wait is needed because the 12 standings need to be saved together
         footballApiService.saveStandings(responses);
-        // wait for API requests to refill so scheduled methods can execute properly
+        // Wait for API requests to refill so scheduled methods can execute properly
         Thread.sleep(60000);
         jobScheduler.setSecondaryTasksCanExecute(true);
         jobScheduler.checkMatchesToday();

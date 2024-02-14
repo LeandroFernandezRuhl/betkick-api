@@ -1,25 +1,48 @@
 package com.example.betkickapi.service.utility;
 
+import com.example.betkickapi.dto.external_api.HeadToHeadResponse;
+import com.example.betkickapi.dto.external_api.TeamStatsResponse;
 import com.example.betkickapi.model.Standing;
 import com.example.betkickapi.model.embbeded.MatchOdds;
-import com.example.betkickapi.web.externalApi.HeadToHeadResponse;
-import com.example.betkickapi.web.externalApi.TeamStatsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 
-
+/**
+ * OddsCalculationService class handles the calculation of match odds based on various factors such as team statistics,
+ * head-to-head performance, and standings. It provides methods to generate match odds and calculate probabilities for
+ * different outcomes.
+ * <br>
+ * <br>
+ * This class uses weights and rates to determine the influence of different factors on the final match odds calculation.
+ * The weights include team rates, recent team rates, head-to-head rates, recent head-to-head rates, standing rates,
+ * and standing position weight.
+ * <br>
+ * <br>
+ * The calculation involves considering team statistics, recent performance, head-to-head history, and standings to
+ * estimate the probabilities of home win, away win, and draw. These probabilities are then normalized and adjusted to
+ * ensure a meaningful representation of match odds.
+ * <br>
+ * <br>
+ * Assumptions:
+ * - The input data provided (TeamStatsResponse, HeadToHeadResponse, List<Standing>) is assumed to be valid and
+ * representative of the teams' performance and standings.
+ * - Certain conditions, such as the total number of matches being non-zero, are assumed for meaningful rate calculations.
+ * - The weights and algorithms used for probability and odds calculation are based on empirical considerations and may
+ * be subject to further fine-tuning.
+ */
 @Service
 @Slf4j
 public class OddsCalculationService {
-    private final Double teamRatesWeight = 0.3; // rate over the last 2 years
-    private final Double recentTeamRatesWeight = 0.15; // rate over the past 5 matches
-    private final Double h2hRatesWeight = 0.01; // historical H2H rate
-    private final Double recentH2hRatesWeight = 0.04; // rate over the last 5 H2H matches
-    private final Double standingRatesWeight = 0.05;
-    private final Double standingPositionWeight = 0.45;
+
+    private final Double teamRatesWeight = 0.3; // Rate over the last 2 years
+    private final Double recentTeamRatesWeight = 0.15; // Rate over the past 5 matches
+    private final Double h2hRatesWeight = 0.01; // Historical H2H rate
+    private final Double recentH2hRatesWeight = 0.04; // Rate over the last 5 H2H matches
+    private final Double standingRatesWeight = 0.05; // Stats of a team in the current competition (W, L, D, GF, GA, etc.)
+    private final Double standingPositionWeight = 0.45; // Position of the team in the current competition's table
 
     private enum TeamRates {
         WIN_RATE, DRAW_RATE,
@@ -35,6 +58,13 @@ public class OddsCalculationService {
         RECENT_H2H_AWAY_WIN_RATE, RECENT_H2H_HOME_WIN_RATE, RECENT_H2H_DRAW_RATE,
     }
 
+    /**
+     * Calculates and returns a HashMap of various team rates based on the provided {@link TeamStatsResponse}.
+     *
+     * @param teamStats The {@link TeamStatsResponse} containing information about the team's performance.
+     * @return A HashMap with keys representing different team rates and values as their calculated rates.
+     * Returns null if total or recent team match counts are zero.
+     */
     private HashMap<TeamRates, Double> calculateTeamRates(TeamStatsResponse teamStats) {
         Double draws = teamStats.getDraws();
         Double wins = teamStats.getWins();
@@ -45,6 +75,7 @@ public class OddsCalculationService {
         Double recentWins = teamStats.getRecentWins();
         Double recentLosses = teamStats.getRecentLosses();
         Double recentMatches = recentLosses + recentWins + recentDraws;
+
 
         if (totalMatches == 0 || recentMatches == 0) {
             log.warn("Count of total or recent team matches is 0");
@@ -59,6 +90,13 @@ public class OddsCalculationService {
         return teamRates;
     }
 
+    /**
+     * Calculates and returns a HashMap of standing rates based on the provided {@link Standing} and totalTeams.
+     *
+     * @param standing   The {@link Standing} object containing information about the team's standing in a competition.
+     * @param totalTeams The total number of teams in the competition.
+     * @return A HashMap with keys representing different standing rates and values as their calculated rates.
+     */
     private HashMap<StandingRates, Double> calculateStandingRates(Standing standing, Integer totalTeams) {
         Double draws = Double.valueOf(standing.getDraw());
         Double wins = Double.valueOf(standing.getWon());
@@ -73,14 +111,19 @@ public class OddsCalculationService {
         return standingRates;
     }
 
-    // determines if the given standing stats are meaningful enough to be taken into account
+    /**
+     * Determines if the given list of standings contains meaningful data for statistical analysis.
+     *
+     * @param standings The list of {@link Standing} objects representing the team standings.
+     * @return true if standings are considered valid; false otherwise.
+     */
     private boolean validateStandings(List<Standing> standings) {
         boolean standingsAreValid = true;
 
         for (Standing standing : standings) {
-            if (standing.getCompetition().getGroup() != null) // this means the comp is at a group stage
+            if (standing.getCompetition().getGroup() != null) // This means the comp is at a group stage
                 standingsAreValid = standing.getDraw() + standing.getWon() + standing.getLost() >= 3;
-            else // the competition has a league format so more matches are needed for stats to be meaningful
+            else // The competition has a league format so more matches are needed for stats to be meaningful
                 standingsAreValid = standing.getDraw() + standing.getWon() + standing.getLost() >= 10;
 
         }
@@ -88,6 +131,13 @@ public class OddsCalculationService {
         return standingsAreValid;
     }
 
+    /**
+     * Calculates and returns a HashMap of head-to-head rates based on the provided {@link HeadToHeadResponse}.
+     *
+     * @param h2h The {@link HeadToHeadResponse} containing information about the teams' historical performance.
+     * @return A HashMap with keys representing different head-to-head rates and values as their calculated rates.
+     * Returns null if total head-to-head match count is zero.
+     */
     private HashMap<HeadToHeadRates, Double> calculateHeadToHeadRates(HeadToHeadResponse h2h) {
 
         if (h2h.getAwayTeamStats() == null || h2h.getHomeTeamStats() == null) {
@@ -123,6 +173,18 @@ public class OddsCalculationService {
         return h2hRates;
     }
 
+    /**
+     * Generates and returns {@link MatchOdds} based on the provided team statistics, head-to-head data, standings, and team IDs.
+     *
+     * @param home       The {@link TeamStatsResponse} for the home team.
+     * @param away       The {@link TeamStatsResponse} for the away team.
+     * @param h2h        The {@link HeadToHeadResponse} containing head-to-head data.
+     * @param standings  The list of {@link Standing} objects representing current standings.
+     * @param homeId     The ID of the home team.
+     * @param totalTeams The total number of teams in the competition.
+     * @return {@link MatchOdds} representing the calculated odds for home win, away win, and draw.
+     * Returns null if any of the required input data is invalid.
+     */
     public MatchOdds generateMatchOdds(TeamStatsResponse home, TeamStatsResponse away, HeadToHeadResponse h2h,
                                        List<Standing> standings, Integer homeId, Integer totalTeams) {
         HashMap<TeamRates, Double> homeRates = this.calculateTeamRates(home);
@@ -175,25 +237,26 @@ public class OddsCalculationService {
         homeWinProbability /= totalProbability;
         awayWinProbability /= totalProbability;
         drawProbability /= totalProbability;
-        // adjust draw probability
+        // Adjust draw probability
         homeWinProbability -= 0.0175;
         awayWinProbability -= 0.0175;
         drawProbability += 0.035;
-        log.info("HOME WIN PROBABILITY: " + homeWinProbability);
-        log.info("DRAW PROBABILITY: " + drawProbability);
-        log.info("AWAY WIN PROBABILITY: " + awayWinProbability);
 
 
         Double homeWinOdds = calculateOdds(homeWinProbability, false);
         Double awayWinOdds = calculateOdds(awayWinProbability, false);
         Double drawOdds = calculateOdds(drawProbability, true);
-        log.info("HOME ODDS: " + homeWinOdds);
-        log.info("DRAW ODDS: " + drawOdds);
-        log.info("AWAY ODDS: " + awayWinOdds);
 
         return new MatchOdds(awayWinOdds, homeWinOdds, drawOdds, false);
     }
 
+    /**
+     * Calculates and returns odds based on the provided probability and adjusts them for specific conditions.
+     *
+     * @param probability The calculated probability for a specific outcome.
+     * @param isDraw      A boolean indicating if the outcome is a draw.
+     * @return Double representing the calculated odds.
+     */
     private double calculateOdds(Double probability, boolean isDraw) {
         double odds = 1D / probability;
         if (odds <= 1D)
@@ -205,9 +268,20 @@ public class OddsCalculationService {
         return odds;
     }
 
+    /**
+     * Calculates and returns the win probability of a team based on various team and standing rates.
+     *
+     * @param teamWinRate       The overall win rate for the team.
+     * @param recentTeamWinRate The recent win rate for the team.
+     * @param h2hWinRate        The historical head-to-head win rate.
+     * @param recentH2hWinRate  The recent head-to-head win rate.
+     * @param standingWinRate   The standing win rate.
+     * @param standingPosition  The normalized standing position.
+     * @return Double representing the calculated win probability.
+     */
     private Double calculateWinProbability(Double teamWinRate, Double recentTeamWinRate, Double h2hWinRate,
                                            Double recentH2hWinRate, Double standingWinRate, Double standingPosition) {
-        // h2hWinRate is historical so there is always going to be some data or be null,
+        // H2hWinRate is historical so there is always going to be some data or be null,
         // however this means that h2hWinRate can simultaneously not be null while having no recent matches
         if (standingWinRate == null && recentH2hWinRate == null) {
             log.info("No standing and no recent H2H win rate");
@@ -218,7 +292,7 @@ public class OddsCalculationService {
         }
 
         if (recentH2hWinRate == null) {
-            // if there are no recent h2h matches, redistribute that weight equally
+            // If there are no recent h2h matches, redistribute that weight equally
             log.info("No recent H2H win rate");
             return teamWinRate * (teamRatesWeight + recentH2hRatesWeight / 5D) +
                     recentTeamWinRate * (recentTeamRatesWeight + recentH2hRatesWeight / 5D) +
@@ -228,7 +302,7 @@ public class OddsCalculationService {
         }
 
         if (standingWinRate == null) {
-            // if there is no standing data, redistribute that weight equally
+            // If there is no standing data, redistribute that weight equally
             log.info("No standing win rate");
             return teamWinRate * (teamRatesWeight + standingRatesWeight / 4D + standingPositionWeight / 4D) +
                     recentTeamWinRate * (recentTeamRatesWeight + standingRatesWeight / 4D + standingPositionWeight / 4D) +
@@ -242,13 +316,26 @@ public class OddsCalculationService {
                 standingWinRate * standingRatesWeight + standingPosition * standingPositionWeight;
     }
 
+    /**
+     * Calculates and returns the draw probability based on various draw rates and standing draw rate.
+     *
+     * @param homeDrawRate         The overall draw rate for the home team.
+     * @param awayDrawRate         The overall draw rate for the away team.
+     * @param recentHomeDrawRate   The recent draw rate for the home team.
+     * @param recentAwayDrawRate   The recent draw rate for the away team.
+     * @param h2hDrawRate          The historical head-to-head draw rate.
+     * @param recentH2hDrawRate    The recent head-to-head draw rate.
+     * @param homeStandingDrawRate The standing draw rate for the home team.
+     * @param awayStandingDrawRate The standing draw rate for the away team.
+     * @return Double representing the calculated draw probability.
+     */
     private Double calculateDrawProbability(Double homeDrawRate, Double awayDrawRate, Double recentHomeDrawRate,
                                             Double recentAwayDrawRate, Double h2hDrawRate, Double recentH2hDrawRate,
                                             Double homeStandingDrawRate, Double awayStandingDrawRate) {
         double teamsDrawAvg = (homeDrawRate + awayDrawRate) / 2D;
         double recentTeamsDrawAvg = (recentHomeDrawRate + recentAwayDrawRate) / 2D;
 
-        if (homeStandingDrawRate == null && recentH2hDrawRate == null ) {
+        if (homeStandingDrawRate == null && recentH2hDrawRate == null) {
             log.info("No standing and no recent H2H draw rate");
             return teamsDrawAvg * (teamRatesWeight + recentH2hRatesWeight / 3D + standingRatesWeight / 3D + standingPositionWeight / 3D) +
                     recentTeamsDrawAvg * (recentTeamRatesWeight + recentH2hRatesWeight / 3D + standingRatesWeight / 3D + standingPositionWeight / 3D) +

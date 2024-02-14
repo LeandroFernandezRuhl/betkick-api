@@ -1,5 +1,8 @@
 package com.example.betkickapi;
 
+import com.example.betkickapi.dto.external_api.HeadToHeadResponse;
+import com.example.betkickapi.dto.external_api.StandingsResponse;
+import com.example.betkickapi.dto.external_api.TeamStatsResponse;
 import com.example.betkickapi.model.Competition;
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.Standing;
@@ -10,9 +13,6 @@ import com.example.betkickapi.service.standings.StandingsService;
 import com.example.betkickapi.service.utility.CacheService;
 import com.example.betkickapi.service.utility.FootballApiService;
 import com.example.betkickapi.service.utility.OddsCalculationService;
-import com.example.betkickapi.web.externalApi.HeadToHeadResponse;
-import com.example.betkickapi.web.externalApi.StandingsResponse;
-import com.example.betkickapi.web.externalApi.TeamStatsResponse;
 import jakarta.transaction.Transactional;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +23,31 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
+
+/**
+ * Scheduled job responsible for various tasks related to football match data and odds calculation.
+ * It utilizes various services and APIs to fetch, calculate, and update data at specified intervals.
+ * <br>
+ * <br>
+ * Tasks schedule:
+ * <br>
+ * * Every 65 seconds (conditional) - {@code scheduledOddsCalculation}.
+ * <br>
+ * * Every 62 seconds (conditional) - {@code updateMatches}.
+ * <br>
+ * * Every 12 hours - {@code checkMatchesToday}: Determines if {@code updateMatches} is allowed to execute.
+ * <br>
+ * * Daily at 23:58:00 - {@code startMidnightTasks}: Sets up a flag that stops {@code scheduledOddsCalculation} and {@code updateMatches} from executing.
+ * <br>
+ * * Daily at 00:00:00 - {@code saveUpcomingMatches}: Fetches and saves upcoming matches for the next ~3 months, updating those that are already stored.
+ * <br>
+ * * Daily at 00:01:10 - {@code updateFirstHalfStandings}.
+ * <br>
+ * * Daily at 00:02:10 - {@code updateSecondHalfStandings}.
+ * <br>
+ * * Daily at 00:03:50 - {@code endMidnightTasks}: Resets the flag that stops {@code scheduledOddsCalculation} and {@code updateMatches} from executing.
+ */
 
 @Component
 @Slf4j
@@ -56,10 +79,14 @@ public class JobScheduler {
         this.standingsList = new ArrayList<>();
     }
 
-    @Scheduled(fixedDelay = 65000)
+    /**
+     * Scheduled task to calculate real match odds for those matches that have random (placeholder) odds.
+     */
+    @Scheduled(fixedDelay = 65000) // Every 65 seconds
     @Transactional
     public void scheduledOddsCalculation() {
         if (shouldCalculateMatchOdds && secondaryTasksCanExecute) {
+            // Gets at most 3 matches, which is the maximum number of matches that can be calculated per minute
             List<Match> matches = matchService.findMatchesWithRandomOdds();
             if (matches.isEmpty()) {
                 log.info("NO MATCHES WITH RANDOM ODDS FOUND");
@@ -71,6 +98,12 @@ public class JobScheduler {
         }
     }
 
+    /**
+     * Calculates match odds for a given match using external API data and statistics.
+     * The method is invoked by the {@code scheduledOddsCalculation} task.
+     *
+     * @param match The football match for which odds are to be calculated.
+     */
     private void calculateMatchOdds(Match match) {
         // Get the current date in UTC
         Instant currentInstant = Instant.now();
@@ -129,10 +162,11 @@ public class JobScheduler {
         }
     }
 
-    // a game's score, status and duration can change any second
-    // but polling the Football Data Org API every second is not feasible
-    // so the games of the current day are checked every minute
-    @Scheduled(fixedDelay = 62000)
+    /**
+     * A game's score, status and duration can change any second. This scheduled task
+     * updates all the matches of the current day with the latest data (status, score, etc.).
+     */
+    @Scheduled(fixedDelay = 62000) // Every 62 seconds
     @Transactional
     public void updateMatches() {
         // 62 seconds to account for communication latency between this and the external API clocks
@@ -142,33 +176,44 @@ public class JobScheduler {
         }
     }
 
+    /**
+     * Scheduled task to check if there are matches today.
+     */
     @Scheduled(cron = "0 0 */12 * * *") // Cron expression for every 12 hours
     public void checkMatchesToday() {
         this.matchesToday = matchService.areThereMatchesToday();
     }
 
-    @Scheduled(cron = "0 58 23 * * *")
+    /**
+     * Scheduled task to start midnight tasks, setting a flag that stops other methods from executing
+     */
+    @Scheduled(cron = "0 58 23 * * *") // Cron expression for 23:58:00
     public void startMidnightTasks() {
         log.warn("MIDNIGHT TASKS STARTING");
         this.secondaryTasksCanExecute = false;
     }
 
+    /**
+     * Scheduled task to end midnight tasks.
+     */
     @Scheduled(cron = "50 3 0 * * *")
     public void endMidnightTasks() {
         log.warn("MIDNIGHT TASKS COMPLETED");
         this.secondaryTasksCanExecute = true;
     }
 
-    // a game's status and programmed date can change anytime, so it needs to be checked daily
+    /**
+     * Scheduled task to save upcoming matches and trigger odds calculation.
+     */
     @Scheduled(cron = "0 0 0 * * *") // Cron expression for midnight (00:00:00) every day
     @Transactional
     public void saveUpcomingMatches() {
-        // get this month's matches, has to be done in 10 days intervals because of API restriction
+        // Get this month's matches, has to be done in 10 days intervals because of API restriction
         Instant currentInstant = Instant.now();
         LocalDate currentDate = LocalDate.ofInstant(currentInstant, ZoneOffset.UTC);
         int from = 0;
         int to = 10;
-        // get matches from today to approx 3 months in the future
+        // Get matches from today to approx 3 months in the future
         for (int i = 0; i < 9; i++) {
             footballApiService.fetchAndSaveMatches(
                     currentDate.plusDays(from),
@@ -181,7 +226,14 @@ public class JobScheduler {
         cacheService.invalidateCacheForKey("activeCompetitions");
     }
 
-    @Scheduled(cron = "10 1 0 * * *")
+    /**
+     * Scheduled task to update standings for the first half of competitions.
+     * <br>
+     * <br>
+     * Standings need to be updated in two batches because the number of requests
+     * exceeds the maximum per minute.
+     */
+    @Scheduled(cron = "10 1 0 * * *") // Cron expression for 00:01:10
     public void updateFirstHalfStandings() {
         List<Competition> competitions = competitionService.getAllCompetitions();
         for (int i = 0; i < 6; i++) {
@@ -189,9 +241,10 @@ public class JobScheduler {
         }
     }
 
-    // standings need to be updated separately because the number of requests
-    // exceeds the maximum, so a one-minute wait is needed
-    @Scheduled(cron = "10 2 0 * * *")
+    /**
+     * Scheduled task to update standings for the second half of competitions.
+     */
+    @Scheduled(cron = "10 2 0 * * *") // Cron expression for 00:02:10
     @Transactional
     public void updateSecondHalfStandings() {
         List<Competition> competitions = competitionService.getAllCompetitions();

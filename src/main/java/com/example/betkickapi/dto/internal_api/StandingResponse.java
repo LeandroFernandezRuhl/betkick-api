@@ -1,8 +1,11 @@
-package com.example.betkickapi.web.internal;
+package com.example.betkickapi.dto.internal_api;
 
 import com.example.betkickapi.model.Team;
 import lombok.Data;
 
+/**
+ * DTO representing the response for individual team standings in a competition.
+ */
 @Data
 public class StandingResponse {
     private Integer position;

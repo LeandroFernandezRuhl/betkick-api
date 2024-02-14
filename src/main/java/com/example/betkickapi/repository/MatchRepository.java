@@ -10,13 +10,19 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * The MatchRepository interface extends the {@link JpaRepository} for managing {@link Match} entities.
+ * It provides various query methods for retrieving matches based on different criteria.
+ */
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Integer> {
-    //List<Match> findByCompetitionId(Integer id);
-    // the method above is ~3x slower than the one below using join fetch,
-    // and also causes N+1, multiplying queries by
-    // 1 (fetch matches) + number of matches fetched *  2 (fetch both teams for each match) + 1 (fetch the competition)
-    // while the method below just makes one query :)
+
+    /**
+     * Retrieves a list of matches for a given competition ID with eager fetching of associated entities.
+     *
+     * @param competitionId The ID of the competition.
+     * @return A list of {@link Match} objects with eager fetching.
+     */
     @Query("SELECT m FROM Match m " +
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +
@@ -24,21 +30,32 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             "WHERE m.competition.id = :competitionId")
     List<Match> findByCompetitionId(@Param("competitionId") Integer competitionId);
 
-    // can't use LIMIT so pageable is necessary
-    // also using native queries gives NonUniqueDiscoveredSqlAliasException when doing the joins
-    // and when using JPQL the fields of the odds embedded object are not accessible
-    // so, given that only 3 entities are returned (page size), the best option is to use a query method instead of SQL
-    // because trying to workaround all those issues above just to make a few less selects is overkill,
-    // since the number of queries is already minimal
+    /**
+     * Retrieves a list of matches with temporary random odds set to true and paginated results.
+     *
+     * @param pageable The pagination information.
+     * @return A paginated list of {@link Match} objects with eager fetching.
+     */
     List<Match> findByOdds_TemporaryRandomOddsIsTrue(Pageable pageable);
 
+    /**
+     * Retrieves a list of matches for given IDs with eager fetching and excluding finished or awarded matches.
+     *
+     * @param ids The list of match IDs.
+     * @return A list of {@link Match} objects with eager fetching.
+     */
     @Query("SELECT m FROM Match m " +
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +
             "LEFT JOIN FETCH m.awayTeam " +
             "WHERE m.id IN :ids AND m.status <> 'FINISHED' AND m.status <> 'AWARDED'")
-    List<Match> findByIdsAndStatusIsNotFinished(List<Integer> ids);
+    List<Match> findByIdsAndStatusIsNotFinished(@Param("ids") List<Integer> ids);
 
+    /**
+     * Retrieves a list of all unfinished matches with eager fetching.
+     *
+     * @return A list of {@link Match} objects with eager fetching.
+     */
     @Query("SELECT m FROM Match m " +
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +
@@ -46,9 +63,21 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             "WHERE m.status <> 'AWARDED' AND m.status <> 'FINISHED' AND m.winner IS NULL")
     List<Match> findAllUnfinishedMatches();
 
+    /**
+     * Retrieves existing match IDs from a given list.
+     *
+     * @param ids The list of match IDs.
+     * @return A list of existing match IDs.
+     */
     @Query("SELECT m.id FROM Match m WHERE m.id IN :ids")
     List<Integer> findExistingMatchIds(@Param("ids") List<Integer> ids);
 
+    /**
+     * Retrieves a list of matches for given IDs with eager fetching.
+     *
+     * @param ids The list of match IDs.
+     * @return A list of {@link Match} objects with eager fetching.
+     */
     @Query("SELECT m FROM Match m " +
             "LEFT JOIN FETCH m.competition " +
             "LEFT JOIN FETCH m.homeTeam " +
@@ -56,6 +85,14 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
             "WHERE m.id IN :ids")
     List<Match> findMatchesByIds(@Param("ids") List<Integer> ids);
 
+    /**
+     * Checks if matches exist within a specified date range.
+     *
+     * @param from The start date.
+     * @param to   The end date.
+     * @return {@code true} if matches exist within the date range; {@code false} otherwise.
+     */
     @Query("SELECT EXISTS (SELECT 1 FROM Match m WHERE DATE(m.utcDate) BETWEEN :from AND :to)")
     Boolean existsByUtcDate(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }
+

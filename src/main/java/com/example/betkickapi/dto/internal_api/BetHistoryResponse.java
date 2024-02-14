@@ -1,4 +1,4 @@
-package com.example.betkickapi.web.internal;
+package com.example.betkickapi.dto.internal_api;
 
 import com.example.betkickapi.model.Match;
 import com.example.betkickapi.model.enums.Winner;
@@ -6,6 +6,9 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * DTO representing the response for a user's bet history.
+ */
 @Data
 public class BetHistoryResponse {
     private Long id;
@@ -16,3 +19,4 @@ public class BetHistoryResponse {
     private Winner winner;
     private Match match;
 }
+

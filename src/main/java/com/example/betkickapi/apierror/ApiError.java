@@ -1,4 +1,5 @@
 package com.example.betkickapi.apierror;
+
 import com.example.betkickapi.apierror.suberror.SubError;
 import com.example.betkickapi.apierror.suberror.ValidationError;
 import com.fasterxml.jackson.annotation.JsonFormat;

@@ -1,13 +1,13 @@
-package com.example.betkickapi.web.internal;
+package com.example.betkickapi.dto.internal_api;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigInteger;
 
-
+/**
+ * DTO representing the summary of a user's betting performance.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

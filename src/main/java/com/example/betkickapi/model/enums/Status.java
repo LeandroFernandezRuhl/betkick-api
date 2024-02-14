@@ -1,5 +1,9 @@
 package com.example.betkickapi.model.enums;
 
+/**
+ * The Status enumeration represents the various states a football match can be in.
+ * It includes options such as scheduled, in progress, finished, etc.
+ */
 public enum Status {
     SCHEDULED,
     TIMED,

@@ -1,4 +1,4 @@
-package com.example.betkickapi.web.externalApi;
+package com.example.betkickapi.dto.external_api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -8,20 +8,37 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DTO representing team statistics response, received from <a href="https://www.football-data.org/">football-data.org API</a>.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class TeamStatsResponse {
+    /**
+     * The list of matches for the team.
+     */
     private List<Map<String, Object>> matches;
-    // stats over the last 2 years
+
+    /**
+     * Stats over the last 2 years.
+     */
     private Double wins;
     private Double draws;
     private Double losses;
-    // stats over the last 5 games (or less if the team is new and doesn't have 5 games)
+
+    /**
+     * Stats over the last 5 games (or less if the team is new and doesn't have 5 games).
+     */
     private Double recentWins;
     private Double recentDraws;
     private Double recentLosses;
 
+    /**
+     * Unpacks nested result set information.
+     *
+     * @param resultSet The result set map containing wins, draws, and losses information.
+     */
     @JsonProperty("resultSet")
     private void unpackNestedResultSet(Map<String, Object> resultSet) {
         this.wins = resultSet.get("wins") == null ? 0 : ((Integer) resultSet.get("wins")).doubleValue();
@@ -29,7 +46,12 @@ public class TeamStatsResponse {
         this.losses = resultSet.get("losses") == null ? 0 : ((Integer) resultSet.get("losses")).doubleValue();
     }
 
-    // this method needs to be called manually because teamName argument can't be passed when deserializing automatically
+    /**
+     * Unpacks nested matches information and calculates recent wins, draws, and losses.
+     * This method needs to be called manually because the teamName argument can't be passed when deserializing automatically.
+     *
+     * @param teamId The ID of the team.
+     */
     public void unpackNestedMatches(Integer teamId) {
         int count = 0;
         recentWins = 0d;
@@ -63,3 +85,4 @@ public class TeamStatsResponse {
         }
     }
 }
+
