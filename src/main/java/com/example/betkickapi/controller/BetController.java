@@ -24,6 +24,7 @@ import java.util.List;
  */
 @AllArgsConstructor
 @RestController
+@CrossOrigin
 @Slf4j
 @Validated
 public class BetController {

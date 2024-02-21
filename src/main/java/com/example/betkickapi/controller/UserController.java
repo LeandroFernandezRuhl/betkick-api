@@ -28,6 +28,7 @@ import static java.util.Map.of;
  */
 @RestController
 @Validated
+@CrossOrigin
 @Slf4j
 public class UserController {
 
