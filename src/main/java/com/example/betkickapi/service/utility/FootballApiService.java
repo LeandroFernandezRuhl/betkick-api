@@ -68,7 +68,7 @@ public class FootballApiService {
         headers.set("X-Auth-Token", API_KEY);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        // stats extracted from "resultSet" object in the JSON response
+        // Stats extracted from "resultSet" object in the JSON response
         ResponseEntity<TeamStatsResponse> response = restTemplate.exchange(
                 "https://api.football-data.org/v4/teams/{teamId}/matches?dateFrom={dateFrom}&dateTo={dateTo}&limit=200",
                 HttpMethod.GET,

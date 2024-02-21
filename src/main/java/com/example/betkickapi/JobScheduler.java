@@ -18,6 +18,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -113,52 +115,64 @@ public class JobScheduler {
         Integer awayId = match.getAwayTeam().getId();
         Integer homeId = match.getHomeTeam().getId();
 
-        // Fetch and unpack statistics for the away team
-        TeamStatsResponse awayStats = footballApiService.fetchTeamStats(awayId, currentDate.minusYears(2), currentDate);
-        awayStats.unpackNestedMatches(awayId);
+        try {
+            // Fetch and unpack statistics for the away team
+            // 23 months because 2 years is the limit, and it may cause issues with the external API
+            TeamStatsResponse awayStats = footballApiService.fetchTeamStats(awayId, currentDate.minusMonths(23), currentDate);
+            awayStats.unpackNestedMatches(awayId);
 
-        // Fetch and unpack statistics for the home team
-        TeamStatsResponse homeStats = footballApiService.fetchTeamStats(homeId, currentDate.minusYears(2), currentDate);
-        homeStats.unpackNestedMatches(homeId);
+            // Fetch and unpack statistics for the home team
+            TeamStatsResponse homeStats = footballApiService.fetchTeamStats(homeId, currentDate.minusMonths(23), currentDate);
+            homeStats.unpackNestedMatches(homeId);
 
-        // Fetch head-to-head statistics for the given match
-        HeadToHeadResponse headToHead = footballApiService.fetchHeadToHead(match.getId());
+            // Fetch head-to-head statistics for the given match
+            HeadToHeadResponse headToHead = footballApiService.fetchHeadToHead(match.getId());
 
-        // Process and unpack head-to-head statistics for the away team
-        TeamStatsResponse h2hAwayStats = headToHead.getAwayTeamStats();
-        if (h2hAwayStats != null) {
-            h2hAwayStats.setMatches(headToHead.getMatches());
-            h2hAwayStats.unpackNestedMatches(awayId);
-        }
+            // Process and unpack head-to-head statistics for the away team
+            TeamStatsResponse h2hAwayStats = headToHead.getAwayTeamStats();
+            if (h2hAwayStats != null) {
+                h2hAwayStats.setMatches(headToHead.getMatches());
+                h2hAwayStats.unpackNestedMatches(awayId);
+            }
 
-        // Process and unpack head-to-head statistics for the home team
-        TeamStatsResponse h2hHomeStats = headToHead.getHomeTeamStats();
-        if (h2hHomeStats != null) {
-            h2hHomeStats.setMatches(headToHead.getMatches());
-            h2hHomeStats.unpackNestedMatches(homeId);
-        }
+            // Process and unpack head-to-head statistics for the home team
+            TeamStatsResponse h2hHomeStats = headToHead.getHomeTeamStats();
+            if (h2hHomeStats != null) {
+                h2hHomeStats.setMatches(headToHead.getMatches());
+                h2hHomeStats.unpackNestedMatches(homeId);
+            }
 
+            // Get the total number of teams in the competition
+            List<Standing> standings = standingsService.getStandingsByCompIdAndTeams(match.getCompetition().getId(), homeId, awayId);
+            Integer totalTeams = 0;
+            if (!standings.isEmpty())
+                totalTeams = standingsService.countStandingsByCompId(standings.get(0).getCompetition().getId());
+            else {
+                standings = null;
+            }
 
-        List<Standing> standings = standingsService.getStandingsByCompIdAndTeams(match.getCompetition().getId(), homeId, awayId);
-        Integer totalTeams = 0;
-        if (!standings.isEmpty())
-            totalTeams = standingsService.countStandingsByCompId(standings.getFirst().getCompetition().getId());
-        else {
-            standings = null;
-        }
+            log.info("CALCULATING ODDS FOR " + match.getHomeTeam().getShortName() + " (HOME) VS (AWAY) " + match.getAwayTeam().getShortName());
+            log.info("Match ID: " + match.getId());
 
-        log.info("CALCULATING ODDS FOR " + match.getHomeTeam().getShortName() + " (HOME) VS (AWAY) " + match.getAwayTeam().getShortName());
-        log.info("Match ID: " + match.getId());
+            // Calculate odds using fetched statistics and head-to-head data
+            MatchOdds calculatedOdds = oddsService.generateMatchOdds(homeStats, awayStats, headToHead, standings, homeId, totalTeams);
 
-        // Calculate odds using fetched statistics and head-to-head data
-        MatchOdds calculatedOdds = oddsService.generateMatchOdds(homeStats, awayStats, headToHead, standings, homeId, totalTeams);
-
-        if (calculatedOdds != null) {
-            match.setOdds(calculatedOdds);
-            matchService.updateMatch(match);
-        } else {
-            log.warn("Odds for this match can't be properly calculated, so it will keep its default random odds");
-            match.getOdds().setTemporaryRandomOdds(false); // the application won't try to calculate this match odds again
+            if (calculatedOdds != null) {
+                match.setOdds(calculatedOdds);
+                matchService.updateMatch(match);
+            } else {
+                log.warn("Odds for this match can't be properly calculated, so it will keep its default random odds");
+                match.getOdds().setTemporaryRandomOdds(false); // the application won't try to calculate this match odds again
+            }
+        } catch (ResourceAccessException exception) {
+            log.error("ResourceAccessException: " + exception.getMessage());
+        } catch (HttpClientErrorException.Forbidden exception) {
+            // Some data needed to calculate this match odds is not available, so it will keep its default random odds
+            log.warn("Odds for " + match.getAwayTeam().getShortName() + " vs " + match.getHomeTeam().getShortName()
+                    + " can't be calculated because of API restrictions");
+            match.getOdds().setTemporaryRandomOdds(false);
+        } catch (HttpClientErrorException exception) {
+            log.error("HttpClientErrorException: " + exception.getMessage());
         }
     }
 
@@ -172,7 +186,11 @@ public class JobScheduler {
         // 62 seconds to account for communication latency between this and the external API clocks
         if (matchesToday && secondaryTasksCanExecute) {
             log.info("Scheduled task to update matches is being executed");
-            footballApiService.fetchAndUpdateMatches();
+            try {
+                footballApiService.fetchAndUpdateMatches();
+            } catch (ResourceAccessException exception) {
+                log.error("ResourceAccessException: " + exception.getMessage());
+            }
         }
     }
 
@@ -208,22 +226,26 @@ public class JobScheduler {
     @Scheduled(cron = "0 0 0 * * *") // Cron expression for midnight (00:00:00) every day
     @Transactional
     public void saveUpcomingMatches() {
-        // Get this month's matches, has to be done in 10 days intervals because of API restriction
-        Instant currentInstant = Instant.now();
-        LocalDate currentDate = LocalDate.ofInstant(currentInstant, ZoneOffset.UTC);
-        int from = 0;
-        int to = 10;
-        // Get matches from today to approx 3 months in the future
-        for (int i = 0; i < 9; i++) {
-            footballApiService.fetchAndSaveMatches(
-                    currentDate.plusDays(from),
-                    currentDate.plusDays(to),
-                    false);
-            from += 10;
-            to += 10;
+        try {
+            // Get this month's matches, has to be done in 10 days intervals because of API restriction
+            Instant currentInstant = Instant.now();
+            LocalDate currentDate = LocalDate.ofInstant(currentInstant, ZoneOffset.UTC);
+            int from = 0;
+            int to = 10;
+            // Get matches from today to approx 3 months in the future
+            for (int i = 0; i < 9; i++) {
+                footballApiService.fetchAndSaveMatches(
+                        currentDate.plusDays(from),
+                        currentDate.plusDays(to),
+                        false);
+                from += 10;
+                to += 10;
+            }
+            shouldCalculateMatchOdds = true;
+            cacheService.invalidateCacheForKey("activeCompetitions");
+        } catch (ResourceAccessException exception) {
+            log.error("ResourceAccessException: " + exception.getMessage());
         }
-        shouldCalculateMatchOdds = true;
-        cacheService.invalidateCacheForKey("activeCompetitions");
     }
 
     /**
@@ -235,9 +257,13 @@ public class JobScheduler {
      */
     @Scheduled(cron = "10 1 0 * * *") // Cron expression for 00:01:10
     public void updateFirstHalfStandings() {
-        List<Competition> competitions = competitionService.getAllCompetitions();
-        for (int i = 0; i < 6; i++) {
-            this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
+        try {
+            List<Competition> competitions = competitionService.getAllCompetitions();
+            for (int i = 0; i < 6; i++) {
+                this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
+            }
+        } catch (ResourceAccessException exception) {
+            log.error("ResourceAccessException: " + exception.getMessage());
         }
     }
 
@@ -247,16 +273,20 @@ public class JobScheduler {
     @Scheduled(cron = "10 2 0 * * *") // Cron expression for 00:02:10
     @Transactional
     public void updateSecondHalfStandings() {
-        List<Competition> competitions = competitionService.getAllCompetitions();
+        try {
+            List<Competition> competitions = competitionService.getAllCompetitions();
 
-        for (int i = 6; i < 12; i++) {
-            this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
+            for (int i = 6; i < 12; i++) {
+                this.standingsList.add(footballApiService.fetchStandings(competitions.get(i)));
+            }
+
+            standingsService.deleteStandings();
+            footballApiService.saveStandings(standingsList);
+
+            this.standingsList.clear();
+            cacheService.invalidateCacheForKey("competitionsWithStandings");
+        } catch (ResourceAccessException exception) {
+            log.error("ResourceAccessException: " + exception.getMessage());
         }
-
-        standingsService.deleteStandings();
-        footballApiService.saveStandings(standingsList);
-
-        this.standingsList.clear();
-        cacheService.invalidateCacheForKey("competitionsWithStandings");
     }
 }
