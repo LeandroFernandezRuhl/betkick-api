@@ -21,7 +21,7 @@ import java.util.List;
  */
 @AllArgsConstructor
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = {"https://betkick.vercel.app", "https://betkick-client-leandrofernandezruhl.vercel.app"})
 @Slf4j
 @RequestMapping("/api")
 public class FootballDataController {

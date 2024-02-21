@@ -28,7 +28,7 @@ import static java.util.Map.of;
  */
 @RestController
 @Validated
-@CrossOrigin
+@CrossOrigin(origins = {"https://betkick.vercel.app", "https://betkick-client-leandrofernandezruhl.vercel.app"})
 @Slf4j
 public class UserController {
 
