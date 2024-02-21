@@ -1,0 +1,21 @@
+# docker-compose.yml
+
+version: '3.9'
+
+services:
+  betkick_app:
+    container_name: betkick_app
+    image: lean-betkick-app:1.0.0
+    build: .
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+
+  betkick_db:
+    container_name: betkick_db
+    image: mariadb:11.3-rc-jammy
+    ports:
+      - 3306:3306
+    env_file:
+      - .env
