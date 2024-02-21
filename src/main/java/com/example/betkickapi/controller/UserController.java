@@ -112,7 +112,7 @@ public class UserController {
                 // If the user doesn't exist, create a new User entity and store Auth0 user ID
                 User applicationUser = new User();
                 applicationUser.setId(auth0UserId);
-                applicationUser.setName(user.getAttribute("name"));
+                applicationUser.setName(user.getAttribute("nickname"));
                 applicationUser.setEmail(user.getAttribute("email"));
                 // Users start with $1000 balance
                 applicationUser.setAccountBalance(1000d);
