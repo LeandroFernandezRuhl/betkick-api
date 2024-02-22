@@ -21,7 +21,6 @@ import java.util.List;
  */
 @AllArgsConstructor
 @RestController
-@CrossOrigin(origins = "https://betkick-api.leandroruhl.com")
 @Slf4j
 @RequestMapping("/api")
 public class FootballDataController {
