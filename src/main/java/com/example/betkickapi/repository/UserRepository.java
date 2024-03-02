@@ -7,13 +7,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * The {@code UserRepository} interface extends the {@link JpaRepository} for managing {@link User} entities.
  * It also provides a custom query for retrieving earnings and bets summary.
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * Retrieves a list of {@link UserBetSummary} objects representing earnings and bets.
@@ -22,5 +24,7 @@ public interface UserRepository extends JpaRepository<User, String> {
      */
     @Query(nativeQuery = true)
     List<UserBetSummary> findEarningsAndBets();
+
+    Optional<User> findByLogin(String login);
 }
 

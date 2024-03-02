@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserBetSummary {
     private Integer position;
-    private String name;
+    private String login;
     private Double earnings;
     private Long betsWon;
     private Long betsLost;

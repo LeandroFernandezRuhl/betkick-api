@@ -20,10 +20,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -110,8 +107,8 @@ public class StartupDataInitializer implements ApplicationRunner {
             };
 
             List<User> users = new ArrayList<>(30);
-            for (String name : usernames) {
-                User user = new User(name + name.hashCode(), name, name + "@gmail.com",
+            for (String username : usernames) {
+                User user = new User("First", "Last", username, UUID.randomUUID().toString(),
                         1000D, new ArrayList<>());
                 User savedUser = userService.saveUser(user);
                 users.add(savedUser);

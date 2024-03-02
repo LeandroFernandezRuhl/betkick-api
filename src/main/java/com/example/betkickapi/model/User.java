@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The User class represents a user entity in the system, extending {@link AbstractPersistableEntity} with a String identifier.
@@ -26,14 +27,14 @@ import java.util.List;
                         "(SUM(IF(B.is_won = TRUE, B.amount * B.odds, 0)) - " +
                         "SUM(IF(B.is_won = FALSE, B.amount, 0))) * 0.15 DESC) AS position, " +
 
-                        "U.name, " +
+                        "U.login, " +
                         "SUM(IF(B.is_won = TRUE, B.amount * B.odds, 0)) - " +
                         "SUM(IF(B.is_won = FALSE, B.amount, 0)) AS earnings, " +
                         "SUM(IF(B.is_won = TRUE, 1, 0)) AS bets_won, " +
                         "SUM(IF(B.is_won = FALSE, 1, 0)) AS bets_lost " +
                         "FROM user U " +
                         "JOIN bet B ON U.id = B.user_id " +
-                        "GROUP BY U.id, U.name " +
+                        "GROUP BY U.id, U.login " +
                         "HAVING SUM(IF(B.is_won = TRUE, 1, 0)) <> 0 OR " +
                         "SUM(IF(B.is_won = FALSE, 1, 0)) <> 0 " +
                         "ORDER BY position",
@@ -45,7 +46,7 @@ import java.util.List;
                 targetClass = UserBetSummary.class,
                 columns = {
                         @ColumnResult(name = "position", type = Integer.class),
-                        @ColumnResult(name = "name", type = String.class),
+                        @ColumnResult(name = "login", type = String.class),
                         @ColumnResult(name = "earnings", type = Double.class),
                         @ColumnResult(name = "bets_won", type = Long.class),
                         @ColumnResult(name = "bets_lost", type = Long.class)
@@ -57,33 +58,32 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
-public class User extends AbstractPersistableEntity<String> {
+public class User extends AbstractPersistableEntity<UUID> {
 
-    /**
-     * The user's identifier (auth0 user id).
-     */
     @Id
     @EqualsAndHashCode.Include
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    /**
-     * The user's name.
-     */
-    private String name;
+    private String firstName;
 
-    /**
-     * The user's email.
-     */
-    private String email;
+    private String lastName;
 
-    /**
-     * The user's account balance.
-     */
+    private String login;
+
+    private String password;
+
     private Double accountBalance;
 
-    /**
-     * The list of bets associated with the user.
-     */
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Bet> bets;
+
+    public User(String firstName, String lastName, String login, String password, Double accountBalance, List<Bet> bets) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.login = login;
+        this.password = password;
+        this.accountBalance = accountBalance;
+        this.bets = bets;
+    }
 }

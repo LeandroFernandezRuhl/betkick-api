@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -110,14 +111,14 @@ public class BetServiceImpl implements BetService {
 
     /**
      * This implementation finds bets by user ID and returns a list of bet history responses.
-     * It utilizes the {@link BetRepository#findByUserId(String)} method and converts each bet to a DTO.
+     * It utilizes the {@link BetRepository#findByUserId(UUID)} method and converts each bet to a DTO.
      *
      * @param userId The unique identifier of the user.
      * @return A list of {@link BetHistoryResponse} objects representing the bet history for the user.
      */
     @Override
     public List<BetHistoryResponse> findBetsByUserId(String userId) {
-        List<Bet> bets = betRepository.findByUserId(userId);
+        List<Bet> bets = betRepository.findByUserId(UUID.fromString(userId));
         return bets.stream()
                 .map(this::convertBetToDto)
                 .collect(Collectors.toList());

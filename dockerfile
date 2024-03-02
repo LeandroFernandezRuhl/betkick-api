@@ -7,4 +7,4 @@ WORKDIR /app
 COPY build/libs/BetKickAPI-0.0.1-SNAPSHOT.jar betkick.jar
 
 # Set the entry point
-ENTRYPOINT ["java", "-jar", "betkick.jar", "--spring.profiles.active=development"]
+ENTRYPOINT ["java", "-jar", "betkick.jar"]

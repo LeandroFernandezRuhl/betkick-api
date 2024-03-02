@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The {@code BetRepository} interface extends the {@link JpaRepository} for managing {@link Bet} entities.
@@ -38,6 +39,6 @@ public interface BetRepository extends JpaRepository<Bet, Integer> {
             "LEFT JOIN FETCH b.match.homeTeam " +
             "LEFT JOIN FETCH b.match.awayTeam " +
             "WHERE b.user.id = :userId")
-    List<Bet> findByUserId(@Param("userId") String userId);
+    List<Bet> findByUserId(@Param("userId") UUID userId);
 }
 
