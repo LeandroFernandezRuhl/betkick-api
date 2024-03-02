@@ -5,6 +5,7 @@ import com.example.betkickapi.model.embbeded.Score;
 import com.example.betkickapi.model.enums.Duration;
 import com.example.betkickapi.model.enums.Status;
 import com.example.betkickapi.model.enums.Winner;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,7 @@ public class Match extends AbstractPersistableEntity<Integer> {
      * The UTC date and time of the match.
      */
     @Column(name = "date") // utcDate is a reserved keyword in mysql
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime utcDate;
 
     /**
