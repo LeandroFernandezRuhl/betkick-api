@@ -1,6 +1,6 @@
 # BetKick API
 
-BetKick is a web application that provides a risk-free simulation environment for football betting. Users can explore real soccer matches and competitions, place virtual bets on match outcomes, 
+BetKick is a web application that provides a risk-free simulation environment for football betting. Users can explore real football matches and competitions, place virtual bets on match outcomes,
 and compete with others to see who makes the best predictions. This repository contains the backend codebase built with Spring Boot. For the frontend repository see [BetKick client](https://github.com/LeandroFernandezRuhl/betkick-client).
 
 ## Features
@@ -39,13 +39,13 @@ The BetKick API is built using the following technologies:
 
 ### Installation
 
-1. Clone the repository: `git clone https://github.com/your-repo/betkick-api.git)`
+1. Clone the repository: `git clone https://github.com/LeandroFernandezRuhl/betkick-api.git)`
 2. Navigate to the project directory: `cd betkick-api`
 3. Configure the database connection in `src/main/resources/application.properties`
-4. Add an enviroment variable with a [football-data.org](https://www.football-data.org/) API key
-4. Build the project: `./gradlew build`
+4. Add an environment variable with a [football-data.org](https://www.football-data.org/) API key
+5. Build the project: `./gradlew build`
 
 ### Running the Application
 
 1. Start the backend server: `./gradlew bootRun`
-2. The server will start on `http://localhost:8080`
+2. The server will start on `http://localhost:8080` on `http://localhost:8080`
